@@ -1,0 +1,42 @@
+html.ytlab-active ytd-thumbnail img,
+html.ytlab-active ytd-thumbnail video,
+html.ytlab-active ytd-rich-grid-media #thumbnail,
+html.ytlab-active ytd-compact-video-renderer #thumbnail,
+html.ytlab-active ytd-video-renderer #thumbnail,
+html.ytlab-active ytd-grid-video-renderer #thumbnail,
+html.ytlab-active ytd-reel-item-renderer #thumbnail,
+html.ytlab-active ytd-playlist-thumbnail img,
+html.ytlab-active ytd-movie-renderer #thumbnail,
+html.ytlab-active ytd-radio-renderer #thumbnail,
+html.ytlab-active ytd-playlist-video-renderer #thumbnail,
+html.ytlab-active ytd-playlist-panel-video-renderer #thumbnail,
+html.ytlab-active ytd-compact-radio-renderer #thumbnail,
+html.ytlab-active ytd-compact-playlist-renderer #thumbnail,
+html.ytlab-active ytd-rich-item-renderer #thumbnail,
+html.ytlab-active ytd-reel-video-renderer #thumbnail,
+html.ytlab-active ytd-notification-renderer img,
+html.ytlab-active ytd-rich-shelf-renderer img,
+html.ytlab-active ytd-channel-video-player-renderer img,
+html.ytlab-active ytd-channel-featured-content-renderer img,
+html.ytlab-active .ytp-ce-covering-image,
+html.ytlab-active .ytp-ce-expanding-image,
+html.ytlab-active .ytp-videowall-still-image,
+html.ytlab-active .ytp-miniplayer-scrim,
+html.ytlab-active ytd-miniplayer img,
+html.ytlab-active ytd-miniplayer video,
+html.ytlab-active yt-image img,
+html.ytlab-active yt-thumbnail-view-model img,
+html.ytlab-active [data-ytlab-thumb] img {
+  filter: grayscale(100%) !important;
+}
+
+/* Don't grayscale avatars in the sim card. Targets img.ytSpecAvatarShapeImage,
+   yt-img-shadow inside #channel-thumbnail (Polymer search), and any img inside
+   common avatar containers. */
+html.ytlab-active [data-ytlab-sim] .ytSpecAvatarShapeImage,
+html.ytlab-active [data-ytlab-sim] yt-avatar-shape img,
+html.ytlab-active [data-ytlab-sim] #channel-thumbnail img,
+html.ytlab-active [data-ytlab-sim] #avatar img,
+html.ytlab-active [data-ytlab-sim] yt-img-shadow img {
+  filter: none !important;
+}

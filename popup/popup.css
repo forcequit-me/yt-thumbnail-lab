@@ -1,0 +1,394 @@
+/* ── Dark-mode tokens (default) ── */
+:root {
+  --bg: #0f0f0f;
+  --off: #444;
+  --on: #111;
+  --glow: #00ff88;
+  --muted: #aaa;
+  --border: #2a2a2a;
+  --text: #eaeaea;
+  --label: #ccc;
+  --panel-bg: #181818;
+  --input-bg: #111;
+  --kbd-bg: #222;
+  --help-bg: #0f0f0fee;
+  --power-on-bg: #ffffff;
+}
+
+/* ── Light-mode overrides ── */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+    --off: #bbb;
+    --on: #222;
+    --glow: #00cc6a;
+    --muted: #666;
+    --border: #ddd;
+    --text: #111;
+    --label: #555;
+    --panel-bg: #f5f5f5;
+    --input-bg: #fff;
+    --kbd-bg: #e8e8e8;
+    --help-bg: #ffffffee;
+    --power-on-bg: #111;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 300px;
+  background: var(--bg);
+  overflow: hidden;
+  font-family: "Segoe UI", Roboto, system-ui, sans-serif;
+  color: var(--text);
+  position: relative;
+}
+
+.stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 16px;
+}
+
+/* ── Power button ── */
+.power {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--off);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 200ms ease, box-shadow 200ms ease, background 200ms ease;
+  outline: none;
+}
+
+.power:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff33;
+}
+
+.power.on {
+  color: var(--on);
+  background: var(--power-on-bg);
+  box-shadow: 0 0 12px var(--glow), 0 0 24px #00ff8855;
+}
+
+/* ── Simulator toggle row ── */
+.sim-toggle-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.sim-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--text);
+  cursor: default;
+}
+
+/* ── Toggle switch ── */
+.switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background: var(--off);
+  border-radius: 20px;
+  transition: background 200ms ease, box-shadow 200ms ease;
+}
+
+.slider::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: var(--bg);
+  border-radius: 50%;
+  transition: transform 200ms ease;
+}
+
+.switch input:checked + .slider {
+  background: var(--glow);
+  box-shadow: 0 0 6px var(--glow);
+}
+
+.switch input:checked + .slider::after {
+  transform: translateX(16px);
+}
+
+/* ── Simulator settings panel ── */
+.sim-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--border);
+  animation: fadeIn 150ms ease;
+}
+
+.sim-panel[hidden] { display: none; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.sim-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sim-field > span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--label);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.sim-field input[type="text"],
+.sim-field textarea {
+  background: var(--input-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 150ms ease;
+  resize: none;
+}
+
+.sim-field input[type="text"]:focus,
+.sim-field textarea:focus {
+  border-color: var(--glow);
+}
+
+.sim-field input[type="file"] {
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+  background: var(--border);
+  color: var(--text);
+  border: 1px solid var(--muted);
+  border-radius: 6px;
+}
+
+.sim-field input[type="file"]:hover {
+  border-color: var(--glow);
+}
+
+.sim-field input[type="file"]::file-selector-button {
+  background: var(--muted);
+  color: var(--bg);
+  border: none;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.sim-field input[type="file"]::file-selector-button:hover {
+  background: var(--glow);
+}
+
+.sim-field small {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.sim-field textarea {
+  font-size: 12px;
+}
+
+/* ── Side-by-side fields ── */
+.sim-pair {
+  display: flex;
+  gap: 8px;
+}
+
+.sim-grow { flex: 1; min-width: 0; }
+.sim-shrink { flex: 0 0 80px; }
+
+/* ── Bottom row: highlight + save ── */
+.sim-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sim-spacer { flex: 1; }
+
+.sim-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.sim-check input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--glow);
+}
+
+.sim-save {
+  background: var(--glow);
+  color: #062;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 150ms ease;
+}
+
+.sim-save:hover { filter: brightness(1.1); }
+.sim-save:active { filter: brightness(0.9); }
+
+.sim-status {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sim-status.ok { color: var(--glow); }
+.sim-status.err { color: #ff6b6b; }
+
+.sim-mini {
+  background: transparent;
+  color: var(--label);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.sim-mini:hover {
+  border-color: var(--glow);
+  color: var(--glow);
+}
+
+.sim-mini:active {
+  filter: brightness(0.85);
+}
+
+/* ── Help button ── */
+.help {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+  padding: 0;
+}
+
+.help:hover {
+  color: var(--text);
+  border-color: var(--text);
+}
+
+/* ── Help panel ── */
+.help-panel {
+  position: absolute;
+  inset: 0;
+  background: var(--help-bg);
+  backdrop-filter: blur(4px);
+  padding: 14px 14px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  z-index: 10;
+}
+
+.help-panel[hidden] { display: none; }
+
+.help-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.help-close:hover { color: var(--text); }
+
+.help-line {
+  margin: 6px 0 8px;
+  font-size: 12px;
+}
+
+.help-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.help-list li {
+  font-size: 12px;
+}
+
+kbd {
+  background: var(--kbd-bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+}

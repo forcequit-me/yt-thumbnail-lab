@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="stack">
+      <button id="toggle" class="power" aria-label="Toggle YT Thumbnail Lab">
+        <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
+          <path
+            d="M12 3v10"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            fill="none"
+          />
+          <path
+            d="M7.5 6.5a7 7 0 1 0 9 0"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            fill="none"
+          />
+        </svg>
+      </button>
+
+      <!-- Simulator toggle slider -->
+      <div class="sim-toggle-row">
+        <span class="sim-label">Simulator</span>
+        <label class="switch" id="sim-switch-label">
+          <input type="checkbox" id="sim-enabled" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Collapsible simulator settings -->
+      <div id="sim-panel" class="sim-panel" hidden>
+        <label class="sim-field">
+          <span>Thumbnail</span>
+          <input type="file" id="sim-thumb" accept="image/*" />
+          <small id="sim-thumb-status">No file selected</small>
+        </label>
+
+        <label class="sim-field">
+          <span>Channel avatar</span>
+          <input type="file" id="sim-avatar" accept="image/*" />
+          <small id="sim-avatar-status">No file selected</small>
+        </label>
+
+        <!-- Hidden previews for data storage only -->
+        <img id="sim-thumb-preview" alt="" style="display:none" />
+        <img id="sim-avatar-preview" alt="" style="display:none" />
+
+        <label class="sim-field">
+          <span>Title</span>
+          <input type="text" id="sim-title" maxlength="100" />
+        </label>
+
+        <div class="sim-pair">
+          <label class="sim-field sim-grow">
+            <span>Channel</span>
+            <input type="text" id="sim-channel" maxlength="50" />
+          </label>
+          <label class="sim-field sim-shrink">
+            <span>Duration</span>
+            <input type="text" id="sim-duration" placeholder="10:24" maxlength="10" />
+          </label>
+        </div>
+
+        <label class="sim-field">
+          <span>Views · Age</span>
+          <input type="text" id="sim-meta" placeholder="1.2M views • 3 days ago" maxlength="60" />
+        </label>
+
+        <label class="sim-field">
+          <span>Description (search only)</span>
+          <textarea id="sim-description" rows="2" maxlength="300" placeholder="First lines of description..."></textarea>
+        </label>
+
+        <div class="sim-row">
+          <label class="sim-check">
+            <input type="checkbox" id="sim-highlight" checked />
+            <span>Highlight</span>
+          </label>
+          <span class="sim-spacer"></span>
+          <button id="sim-save-default" class="sim-mini" type="button" title="Save current values as your default">
+            Save default
+          </button>
+          <button id="sim-reset-default" class="sim-mini" type="button" title="Reload your saved default">
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <button
+        id="help-btn"
+        class="help"
+        type="button"
+        aria-label="About YT Thumbnail Lab"
+      >
+        ?
+      </button>
+    </div>
+
+    <div id="help-panel" class="help-panel" hidden>
+      <button id="help-close" class="help-close" aria-label="Close">×</button>
+      <p class="help-line">
+        Turns every YouTube thumbnail to black and white.
+      </p>
+      <ul class="help-list">
+        <li><b>Shortcut:</b> <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></li>
+        <li><b>Right-click</b> any YouTube page for a toggle menu item.</li>
+      </ul>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

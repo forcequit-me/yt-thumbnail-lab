@@ -21,13 +21,7 @@ function findByAncestorItem(itemTag) {
     document.querySelectorAll(`${itemTag}:not([${SIM_ATTR}])`)
   );
   if (items.length === 0) return null;
-  const container = items[0].parentElement;
-  if (!container) return null;
-  const siblings = Array.from(container.children).filter(
-    (el) => el.tagName.toLowerCase() === itemTag && !el.hasAttribute(SIM_ATTR)
-  );
-  if (siblings.length === 0) return null;
-  return { container, itemTag, items: siblings };
+  return { itemTag, items };
 }
 
 function findItemsInScope(scope, itemTag) {
@@ -35,13 +29,7 @@ function findItemsInScope(scope, itemTag) {
     scope.querySelectorAll(`${itemTag}:not([${SIM_ATTR}])`)
   );
   if (items.length === 0) return null;
-  const container = items[0].parentElement;
-  if (!container) return null;
-  const siblings = Array.from(container.children).filter(
-    (el) => el.tagName.toLowerCase() === itemTag && !el.hasAttribute(SIM_ATTR)
-  );
-  if (siblings.length === 0) return null;
-  return { container, itemTag, items: siblings };
+  return { itemTag, items };
 }
 
 function findContainerAndTemplate() {
@@ -786,8 +774,14 @@ function injectOnce() {
   const insertIdx = computeInsertIndex(target.items, target.page, pos.x | 0, pos.y | 0, pos.ts || 0);
   const anchor = target.items[insertIdx];
   const clone = buildSimNode(sim, template);
-  if (anchor) target.container.insertBefore(clone, anchor);
-  else target.container.appendChild(clone);
+  if (anchor) {
+    anchor.parentNode.insertBefore(clone, anchor);
+  } else {
+    const lastItem = target.items[target.items.length - 1];
+    if (lastItem && lastItem.parentNode) {
+      lastItem.parentNode.appendChild(clone);
+    }
+  }
 
   // Delayed re-applications to fight Polymer re-renders
   [50, 150, 400, 800, 1500, 3000].forEach((delay) => {

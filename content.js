@@ -89,13 +89,46 @@ function findContainerAndTemplate() {
   return null;
 }
 
+let baseIndexMap = { home: -1, search: -1, watch: -1 };
+let lastPos = { home: "", search: "", watch: "" };
+
+function getViewportCenterIndex(items) {
+  const vCenter = window.innerHeight / 2;
+  let closestIdx = 0;
+  let minDiff = Infinity;
+  items.forEach((el, i) => {
+    const rect = el.getBoundingClientRect();
+    if (rect.height === 0) return;
+    const elCenter = rect.top + rect.height / 2;
+    const diff = Math.abs(elCenter - vCenter);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closestIdx = i;
+    }
+  });
+  return closestIdx;
+}
+
 // Compute insertion index: center of items + position offset.
 // Home is a CSS grid (multiple cols) — derive cols from bounding rect tops.
 // Search/watch are linear lists; x is ignored.
-function computeInsertIndex(items, page, x, y) {
+function computeInsertIndex(items, page, x, y, ts) {
   const len = items.length;
   if (len === 0) return 0;
-  const center = Math.floor(len / 2);
+  
+  const currentPos = `${x},${y},${ts || 0}`;
+  
+  if (baseIndexMap[page] === -1) {
+    baseIndexMap[page] = getViewportCenterIndex(items);
+  } else if (currentPos !== lastPos[page]) {
+    if (x === 0 && y === 0) {
+      baseIndexMap[page] = getViewportCenterIndex(items);
+    }
+  }
+  lastPos[page] = currentPos;
+  
+  const center = baseIndexMap[page];
+  
   if (page === "home") {
     const tops = items.map((el) => Math.round(el.getBoundingClientRect().top));
     const firstTop = tops[0];
@@ -750,7 +783,7 @@ function injectOnce() {
 
   const posMap = sim.position || {};
   const pos = posMap[target.page] || { x: 0, y: 0 };
-  const insertIdx = computeInsertIndex(target.items, target.page, pos.x | 0, pos.y | 0);
+  const insertIdx = computeInsertIndex(target.items, target.page, pos.x | 0, pos.y | 0, pos.ts || 0);
   const anchor = target.items[insertIdx];
   const clone = buildSimNode(sim, template);
   if (anchor) target.container.insertBefore(clone, anchor);

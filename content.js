@@ -217,7 +217,7 @@ function makeThumbImg(dataUrl) {
   // ytCoreImageLoaded keeps the image visible against YT's loading-opacity CSS
   img.className = "ytCoreImageHost ytCoreImageLoaded";
   img.style.cssText =
-    "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:1;z-index:1;";
+    "position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;object-fit:cover !important;display:block !important;opacity:1 !important;z-index:1 !important;";
   return img;
 }
 
@@ -590,12 +590,11 @@ function aggressiveSwap(node, sim) {
 }
 
 function markImageLoaded(img) {
-  // YT's ytCore image system keeps imgs at opacity:0 until it adds
-  // .ytCoreImageLoaded after the natural load event. When we replace src
-  // with a data URL, that flag never fires for cloned imgs — the image stays
-  // invisible. Add the class manually so YT's CSS reveals the element.
   img.classList.add("ytCoreImageLoaded");
   img.removeAttribute("hidden");
+  img.style.setProperty("opacity", "1", "important");
+  img.style.setProperty("display", "block", "important");
+  img.style.setProperty("visibility", "visible", "important");
 }
 
 function swapAvatar(node, dataUrl) {
@@ -614,6 +613,7 @@ function swapAvatar(node, dataUrl) {
     if (img) {
       img.removeAttribute("srcset");
       img.src = dataUrl;
+      img.style.setProperty("object-fit", "cover", "important");
       markImageLoaded(img);
     } else {
       const newImg = document.createElement("img");
@@ -788,6 +788,7 @@ function injectOnce() {
     setTimeout(() => {
       if (!clone.isConnected) return;
       applyAllSwaps(clone, sim);
+      freezeLitElements(clone);
     }, delay);
   });
   return true; // success

@@ -309,6 +309,7 @@ posBtns.forEach((b) => {
       p.x = 0;
       p.y = 0;
     }
+    p.ts = Date.now();
     autoSave();
   });
 });

@@ -57,6 +57,16 @@
           <input type="color" id="sim-highlight-color" value="#00ff88" title="Highlight color" />
         </div>
 
+        <!-- Global Position Controls -->
+        <div class="pos-global-row">
+          <span class="sim-label">Position</span>
+          <div class="pos-pad">
+            <button type="button" class="pos-btn" data-dir="prev" aria-label="Previous">&lt;</button>
+            <button type="button" class="pos-btn" data-dir="center" aria-label="Recenter">Recenter</button>
+            <button type="button" class="pos-btn" data-dir="next" aria-label="Next">&gt;</button>
+          </div>
+        </div>
+
         <!-- Compact image upload row -->
         <div class="upload-row">
           <div class="upload-slot" id="thumb-slot">
@@ -120,36 +130,7 @@
           <textarea id="sim-description" rows="2" maxlength="300" placeholder="First lines of description..."></textarea>
         </label>
 
-        <!-- Position controls -->
-        <details class="sim-section">
-          <summary>Position</summary>
-          <div class="sim-section-body">
-            <div class="pos-row" data-page="home">
-              <span class="pos-label">Home</span>
-              <div class="pos-pad">
-                <button type="button" class="pos-btn" data-dir="prev" aria-label="Previous">&lt;</button>
-                <button type="button" class="pos-btn" data-dir="center" aria-label="Recenter">Recenter</button>
-                <button type="button" class="pos-btn" data-dir="next" aria-label="Next">&gt;</button>
-              </div>
-            </div>
-            <div class="pos-row" data-page="search">
-              <span class="pos-label">Search</span>
-              <div class="pos-pad">
-                <button type="button" class="pos-btn" data-dir="prev" aria-label="Previous">&lt;</button>
-                <button type="button" class="pos-btn" data-dir="center" aria-label="Recenter">Recenter</button>
-                <button type="button" class="pos-btn" data-dir="next" aria-label="Next">&gt;</button>
-              </div>
-            </div>
-            <div class="pos-row" data-page="watch">
-              <span class="pos-label">Watch</span>
-              <div class="pos-pad">
-                <button type="button" class="pos-btn" data-dir="prev" aria-label="Previous">&lt;</button>
-                <button type="button" class="pos-btn" data-dir="center" aria-label="Recenter">Recenter</button>
-                <button type="button" class="pos-btn" data-dir="next" aria-label="Next">&gt;</button>
-              </div>
-            </div>
-          </div>
-        </details>
+
 
         <!-- Templates -->
         <details class="sim-section">

@@ -295,21 +295,24 @@ simResetDefault.addEventListener("click", () => {
 const POS_LIMIT = 5;
 posBtns.forEach((b) => {
   b.addEventListener("click", () => {
-    const row = b.closest(".pos-row");
-    const page = row.getAttribute("data-page");
     const dir = b.getAttribute("data-dir");
-    const p = position[page];
     if (dir === "prev") {
-      if (page === "home") p.x = Math.max(-POS_LIMIT, p.x - 1);
-      else p.y = Math.max(-POS_LIMIT, p.y - 1);
+      position.home.x = Math.max(-POS_LIMIT, position.home.x - 1);
+      position.search.y = Math.max(-POS_LIMIT, position.search.y - 1);
+      position.watch.y = Math.max(-POS_LIMIT, position.watch.y - 1);
     } else if (dir === "next") {
-      if (page === "home") p.x = Math.min(POS_LIMIT, p.x + 1);
-      else p.y = Math.min(POS_LIMIT, p.y + 1);
+      position.home.x = Math.min(POS_LIMIT, position.home.x + 1);
+      position.search.y = Math.min(POS_LIMIT, position.search.y + 1);
+      position.watch.y = Math.min(POS_LIMIT, position.watch.y + 1);
     } else if (dir === "center") {
-      p.x = 0;
-      p.y = 0;
+      position.home.x = 0; position.home.y = 0;
+      position.search.x = 0; position.search.y = 0;
+      position.watch.x = 0; position.watch.y = 0;
     }
-    p.ts = Date.now();
+    const ts = Date.now();
+    position.home.ts = ts;
+    position.search.ts = ts;
+    position.watch.ts = ts;
     autoSave();
   });
 });

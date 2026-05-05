@@ -630,17 +630,13 @@ kbd {
 }
 
 /* ── Position pad ── */
-.pos-row {
+.pos-global-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-}
-
-.pos-label {
-  flex: 0 0 50px;
-  font-size: 12px;
-  color: var(--text);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
 }
 
 .pos-pad {

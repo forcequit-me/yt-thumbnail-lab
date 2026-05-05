@@ -37,9 +37,6 @@ const simResetDefault = document.getElementById("sim-reset-default");
 
 // Composite image preview
 const imgPreview = document.getElementById("img-preview");
-
-const posReset = document.getElementById("pos-reset");
-const posReadouts = document.querySelectorAll(".pos-readout");
 const posBtns = document.querySelectorAll(".pos-btn");
 
 const tplSelect = document.getElementById("tpl-select");
@@ -60,13 +57,6 @@ let position = {
 const MAX_BYTES = 100 * 1024 * 1024;
 
 /* ── Position UI ── */
-function renderPosition() {
-  posReadouts.forEach((el) => {
-    const page = el.getAttribute("data-readout");
-    const p = position[page] || { x: 0, y: 0 };
-    el.textContent = `${p.x},${p.y}`;
-  });
-}
 
 /* ── Power button visual = sim.enabled ── */
 function renderPowerVisual(simEnabled) {
@@ -96,7 +86,6 @@ function render(state) {
     search: { ...(sim.position?.search || { x: 0, y: 0 }) },
     watch:  { ...(sim.position?.watch  || { x: 0, y: 0 }) },
   };
-  renderPosition();
 
   if (sim.thumbnail) {
     thumbnailDataUrl = sim.thumbnail;
@@ -310,23 +299,18 @@ posBtns.forEach((b) => {
     const page = row.getAttribute("data-page");
     const dir = b.getAttribute("data-dir");
     const p = position[page];
-    if (dir === "up")    p.y = Math.max(-POS_LIMIT, p.y - 1);
-    if (dir === "down")  p.y = Math.min( POS_LIMIT, p.y + 1);
-    if (dir === "left")  p.x = Math.max(-POS_LIMIT, p.x - 1);
-    if (dir === "right") p.x = Math.min( POS_LIMIT, p.x + 1);
-    renderPosition();
+    if (dir === "prev") {
+      if (page === "home") p.x = Math.max(-POS_LIMIT, p.x - 1);
+      else p.y = Math.max(-POS_LIMIT, p.y - 1);
+    } else if (dir === "next") {
+      if (page === "home") p.x = Math.min(POS_LIMIT, p.x + 1);
+      else p.y = Math.min(POS_LIMIT, p.y + 1);
+    } else if (dir === "center") {
+      p.x = 0;
+      p.y = 0;
+    }
     autoSave();
   });
-});
-
-posReset.addEventListener("click", () => {
-  position = {
-    home:   { x: 0, y: 0 },
-    search: { x: 0, y: 0 },
-    watch:  { x: 0, y: 0 },
-  };
-  renderPosition();
-  autoSave();
 });
 
 /* ── Templates ── */

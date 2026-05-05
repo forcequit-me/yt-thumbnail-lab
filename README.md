@@ -14,12 +14,12 @@ Three uses:
 
 ## Features
 
-- **Thumbnail Simulator.** Upload your thumbnail and avatar, fill in title, channel, view count, duration, and description. The extension drops a fake video card into the home feed, search results, and watch-page sidebar so you can preview against live cards.
+- **Thumbnail Simulator.** Upload your thumbnail and avatar, fill in title, channel, view count, duration, and description. The extension drops a fake video card into the home feed, search results, and watch-page sidebar so you can preview against live cards. Keyboard shortcut: `Alt+Shift+S`. Right-click any YouTube page for a toggle menu entry.
 - **Custom highlight color.** Pick any color for the outline around your simulated card.
 - **Position controls.** Move the simulated card up, down, left, or right per page (home, search, watch sidebar). Defaults to centered.
 - **Templates for A/B testing.** Save multiple named configurations (different thumbnails, titles, etc.), switch between them, and delete with confirmation.
 - **Quick-slot default.** Save your usual setup and reload it with one click.
-- **B&W mode.** Toggle every YouTube thumbnail to grayscale. Keyboard shortcut: `Alt+Shift+B`. Right-click any YouTube page for a toggle menu entry.
+- **B&W mode.** Toggle every YouTube thumbnail to grayscale. Keyboard shortcut: `Alt+Shift+B`. Right-click any YouTube page for a toggle menu entry. Disabled by default.
 - Auto-saves as you type. Settings stay on your machine. No tracking. No network requests.
 
 ## Installation
@@ -59,7 +59,13 @@ Open the popup. Click the **power button** to turn the simulator on. The setting
 | Views · Age | One line, e.g. `1.2M views • 3 days ago`. |
 | Description | Up to 300 characters. Shows on the search results page only. |
 
-Click the power button again to remove the card. Clicking the simulated card does nothing — it is a preview, not a real video.
+Three ways to toggle the simulator:
+
+- Click the **power button** in the popup.
+- Right-click any YouTube page and pick **YT Thumbnail Lab: Simulator off / Simulator on**.
+- Press `Alt+Shift+S` on any YouTube page.
+
+Clicking the simulated card does nothing — it is a preview, not a real video. The toolbar icon is dark when the simulator is off, green when on.
 
 ### Position
 
@@ -99,10 +105,8 @@ The color picker on the Highlight row auto-saves whenever you change it. It is *
 The **B&W** slider in the popup turns every YouTube thumbnail grayscale. Independent from the simulator — you can use either or both. Three ways to toggle:
 
 - Click the popup's B&W slider.
-- Right-click any YouTube page and pick **YT Thumbnail Lab: turn off / turn on**.
+- Right-click any YouTube page and pick **YT Thumbnail Lab: B&W off / B&W on**.
 - Press `Alt+Shift+B` on any YouTube page.
-
-The toolbar icon is dark when B&W is off, green when on.
 
 ## Troubleshooting
 

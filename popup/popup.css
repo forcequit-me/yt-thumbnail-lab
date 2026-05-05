@@ -307,7 +307,7 @@ html, body {
   border-radius: 7px;
   overflow: visible;
   margin-top: 4px;
-  margin-bottom: 14px; /* space for avatar badge peeking below */
+  margin-bottom: 18px; /* space for avatar badge peeking below */
 }
 
 .img-preview[hidden] { display: none; }
@@ -326,10 +326,10 @@ html, body {
 /* Avatar badge — small circle bottom-left, peeking below the thumbnail */
 .img-preview-avatar {
   position: absolute;
-  bottom: -10px;
+  bottom: -14px;
   left: 8px;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
   object-position: center;

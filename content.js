@@ -1,7 +1,7 @@
 const ROOT_CLASS = "ytlab-active";
 const SIM_ATTR = "data-ytlab-sim";
 
-let currentState = { active: true, sim: { enabled: false } };
+let currentState = { active: false, sim: { enabled: false } };
 let observer = null;
 let pending = null;
 

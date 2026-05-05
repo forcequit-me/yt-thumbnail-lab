@@ -52,10 +52,10 @@ html.ytlab-active [data-ytlab-sim] yt-img-shadow img {
   content: "";
   pointer-events: none;
   position: absolute;
-  inset: -3px;
-  border: 2.5px solid var(--ytlab-hl-color, #00ff88);
-  border-radius: 14px;
+  inset: -6px;
+  border: 3.5px solid var(--ytlab-hl-color, #00ff88);
+  border-radius: 16px;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--ytlab-hl-color, #00ff88) 30%, transparent),
-              0 0 10px color-mix(in srgb, var(--ytlab-hl-color, #00ff88) 35%, transparent);
+              0 0 12px color-mix(in srgb, var(--ytlab-hl-color, #00ff88) 35%, transparent);
   z-index: 9999;
 }

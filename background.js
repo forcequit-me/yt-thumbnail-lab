@@ -19,7 +19,7 @@ const DEFAULT_SIM = {
 };
 
 const DEFAULT_STATE = {
-  active: true,
+  active: false,
   sim: DEFAULT_SIM,
 };
 

@@ -57,20 +57,38 @@
           <input type="color" id="sim-highlight-color" value="#00ff88" title="Highlight color" />
         </div>
 
-        <label class="sim-field">
-          <span>Thumbnail</span>
-          <input type="file" id="sim-thumb" accept="image/*" />
-          <small id="sim-thumb-status">No file selected</small>
-        </label>
-
-        <label class="sim-field">
-          <span>Channel avatar</span>
-          <input type="file" id="sim-avatar" accept="image/*" />
-          <small id="sim-avatar-status">No file selected</small>
-        </label>
-
-        <img id="sim-thumb-preview" alt="" style="display:none" />
-        <img id="sim-avatar-preview" alt="" style="display:none" />
+        <!-- Compact image upload row -->
+        <div class="upload-row">
+          <div class="upload-slot" id="thumb-slot">
+            <input type="file" id="sim-thumb" accept="image/*" tabindex="-1" />
+            <button type="button" class="upload-btn" id="thumb-pick-btn" title="Choose thumbnail">
+              <span class="upload-icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="1" y="3" width="14" height="10" rx="1.5"/>
+                  <path d="M1 10l4-3.5 3 2.5 2.5-2 3.5 3"/>
+                  <circle cx="11.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                </svg>
+              </span>
+              <span class="upload-label" id="thumb-label">Thumbnail</span>
+            </button>
+            <button type="button" class="upload-clear" id="thumb-clear-btn" hidden title="Clear thumbnail">&#x2715;</button>
+            <img id="sim-thumb-preview" class="upload-preview" alt="" hidden />
+          </div>
+          <div class="upload-slot" id="avatar-slot">
+            <input type="file" id="sim-avatar" accept="image/*" tabindex="-1" />
+            <button type="button" class="upload-btn" id="avatar-pick-btn" title="Choose channel avatar">
+              <span class="upload-icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="8" cy="6" r="3"/>
+                  <path d="M2 14c0-3 2.7-5 6-5s6 2 6 5"/>
+                </svg>
+              </span>
+              <span class="upload-label" id="avatar-label">Avatar</span>
+            </button>
+            <button type="button" class="upload-clear" id="avatar-clear-btn" hidden title="Clear avatar">&#x2715;</button>
+            <img id="sim-avatar-preview" class="upload-preview upload-preview--round" alt="" hidden />
+          </div>
+        </div>
 
         <label class="sim-field">
           <span>Title</span>

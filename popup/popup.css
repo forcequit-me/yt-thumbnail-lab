@@ -196,39 +196,125 @@ html, body {
   border-color: var(--glow);
 }
 
-.sim-field input[type="file"] {
-  font-size: 12px;
-  padding: 5px 10px;
-  cursor: pointer;
-  background: var(--border);
-  color: var(--text);
-  border: 1px solid var(--muted);
-  border-radius: 6px;
+/* ── Compact upload row ── */
+.upload-row {
+  display: flex;
+  gap: 6px;
 }
 
-.sim-field input[type="file"]:hover {
-  border-color: var(--glow);
+.upload-slot {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.sim-field input[type="file"]::file-selector-button {
-  background: var(--muted);
-  color: var(--bg);
-  border: none;
-  border-radius: 4px;
-  padding: 3px 10px;
+/* Hidden real file input — triggered by JS */
+.upload-slot input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+.upload-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  padding: 10px 6px;
+  background: var(--input-bg);
+  border: 1px dashed var(--border);
+  border-radius: 7px;
+  color: var(--muted);
+  font: inherit;
   font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.3px;
   cursor: pointer;
-  margin-right: 8px;
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+  text-transform: uppercase;
 }
 
-.sim-field input[type="file"]::file-selector-button:hover {
-  background: var(--glow);
+.upload-btn:hover {
+  border-color: var(--glow);
+  color: var(--glow);
+  background: #00ff8808;
 }
 
-.sim-field small {
-  font-size: 11px;
-  color: var(--muted);
+.upload-icon {
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+}
+
+.upload-btn:hover .upload-icon {
+  opacity: 1;
+}
+
+/* When slot has a file loaded — compact state */
+.upload-slot.has-file .upload-btn {
+  padding: 4px 6px;
+  flex-direction: row;
+  gap: 5px;
+  border-style: solid;
+  border-color: var(--glow);
+  color: var(--glow);
+  background: #00ff8808;
+  font-size: 10px;
+}
+
+.upload-slot.has-file .upload-icon {
+  opacity: 1;
+}
+
+.upload-clear {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: var(--muted);
+  color: var(--bg);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 150ms ease;
+  z-index: 1;
+}
+
+.upload-clear:hover {
+  background: #ff6b6b;
+  color: #fff;
+}
+
+.upload-preview {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 5px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
+.upload-preview--round {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .sim-field textarea {

@@ -11,11 +11,17 @@ const bwEnabled = document.getElementById("bw-enabled");
 // Simulator elements
 const simPanel = document.getElementById("sim-panel");
 const simThumb = document.getElementById("sim-thumb");
-const simThumbStatus = document.getElementById("sim-thumb-status");
 const simThumbPreview = document.getElementById("sim-thumb-preview");
+const thumbSlot = document.getElementById("thumb-slot");
+const thumbPickBtn = document.getElementById("thumb-pick-btn");
+const thumbLabel = document.getElementById("thumb-label");
+const thumbClearBtn = document.getElementById("thumb-clear-btn");
 const simAvatar = document.getElementById("sim-avatar");
-const simAvatarStatus = document.getElementById("sim-avatar-status");
 const simAvatarPreview = document.getElementById("sim-avatar-preview");
+const avatarSlot = document.getElementById("avatar-slot");
+const avatarPickBtn = document.getElementById("avatar-pick-btn");
+const avatarLabel = document.getElementById("avatar-label");
+const avatarClearBtn = document.getElementById("avatar-clear-btn");
 const simTitle = document.getElementById("sim-title");
 const simChannel = document.getElementById("sim-channel");
 const simMeta = document.getElementById("sim-meta");
@@ -91,18 +97,18 @@ function render(state) {
 
   if (sim.thumbnail) {
     thumbnailDataUrl = sim.thumbnail;
-    simThumbPreview.src = sim.thumbnail;
-    simThumbStatus.textContent = "Saved thumbnail loaded";
+    setThumbLoaded(sim.thumbnail);
   } else {
     thumbnailDataUrl = "";
+    clearThumbUI();
   }
 
   if (sim.avatar) {
     avatarDataUrl = sim.avatar;
-    simAvatarPreview.src = sim.avatar;
-    simAvatarStatus.textContent = "Saved avatar loaded";
+    setAvatarLoaded(sim.avatar);
   } else {
     avatarDataUrl = "";
+    clearAvatarUI();
   }
 
   loading = false;
@@ -188,39 +194,80 @@ simHighlightColor.addEventListener("input", autoSave);
   });
 });
 
+/* ── Upload slot UI helpers ── */
+function setThumbLoaded(dataUrl) {
+  simThumbPreview.src = dataUrl;
+  simThumbPreview.hidden = false;
+  thumbSlot.classList.add("has-file");
+  thumbLabel.textContent = "Thumbnail ✓";
+  thumbClearBtn.hidden = false;
+}
+function clearThumbUI() {
+  simThumbPreview.hidden = true;
+  simThumbPreview.src = "";
+  thumbSlot.classList.remove("has-file");
+  thumbLabel.textContent = "Thumbnail";
+  thumbClearBtn.hidden = true;
+  simThumb.value = "";
+}
+function setAvatarLoaded(dataUrl) {
+  simAvatarPreview.src = dataUrl;
+  simAvatarPreview.hidden = false;
+  avatarSlot.classList.add("has-file");
+  avatarLabel.textContent = "Avatar ✓";
+  avatarClearBtn.hidden = false;
+}
+function clearAvatarUI() {
+  simAvatarPreview.hidden = true;
+  simAvatarPreview.src = "";
+  avatarSlot.classList.remove("has-file");
+  avatarLabel.textContent = "Avatar";
+  avatarClearBtn.hidden = true;
+  simAvatar.value = "";
+}
+
 /* ── File reader ── */
-function readFile(file, onLoad, statusEl) {
+function readFile(file, onLoaded) {
   if (!file) return;
-  if (file.size > MAX_BYTES) {
-    statusEl.textContent = `Too large (${(file.size / 1048576).toFixed(1)} MB)`;
-    return;
-  }
+  if (file.size > MAX_BYTES) return; // silently skip over-large files
   const reader = new FileReader();
   reader.onload = () => {
-    onLoad(String(reader.result || ""));
-    statusEl.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+    onLoaded(String(reader.result || ""));
     saveNow();
-  };
-  reader.onerror = () => {
-    statusEl.textContent = "Failed to read file";
   };
   reader.readAsDataURL(file);
 }
+
+/* ── Pick buttons → open file dialog ── */
+thumbPickBtn.addEventListener("click", () => simThumb.click());
+avatarPickBtn.addEventListener("click", () => simAvatar.click());
+
+/* ── Clear buttons ── */
+thumbClearBtn.addEventListener("click", () => {
+  thumbnailDataUrl = "";
+  clearThumbUI();
+  saveNow();
+});
+avatarClearBtn.addEventListener("click", () => {
+  avatarDataUrl = "";
+  clearAvatarUI();
+  saveNow();
+});
 
 simThumb.addEventListener("change", () => {
   const file = simThumb.files && simThumb.files[0];
   readFile(file, (data) => {
     thumbnailDataUrl = data;
-    simThumbPreview.src = data;
-  }, simThumbStatus);
+    setThumbLoaded(data);
+  });
 });
 
 simAvatar.addEventListener("change", () => {
   const file = simAvatar.files && simAvatar.files[0];
   readFile(file, (data) => {
     avatarDataUrl = data;
-    simAvatarPreview.src = data;
-  }, simAvatarStatus);
+    setAvatarLoaded(data);
+  });
 });
 
 /* ── Save / reset defaults ── */

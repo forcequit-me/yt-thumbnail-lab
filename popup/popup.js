@@ -78,7 +78,7 @@ function render(state) {
   simDescription.value = sim.description || "";
   simDuration.value = sim.duration || "";
   highlightActive = sim.highlight !== false;
-  simHighlightBtn.setAttribute("aria-pressed", String(highlightActive));
+  simHighlightBtn.checked = highlightActive;
   simHighlightColor.value = sim.highlightColor || "#00ff88";
 
   position = {
@@ -168,9 +168,8 @@ bwEnabled.addEventListener("change", () => {
 [simTitle, simChannel, simMeta, simDescription, simDuration].forEach((el) => {
   el.addEventListener("input", autoSave);
 });
-simHighlightBtn.addEventListener("click", () => {
-  highlightActive = !highlightActive;
-  simHighlightBtn.setAttribute("aria-pressed", String(highlightActive));
+simHighlightBtn.addEventListener("change", () => {
+  highlightActive = simHighlightBtn.checked;
   autoSave();
 });
 simHighlightColor.addEventListener("input", autoSave);

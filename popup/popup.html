@@ -36,29 +36,20 @@
 
       <!-- Collapsible simulator settings -->
       <div id="sim-panel" class="sim-panel" hidden>
-        <!-- Highlight row (top of panel) -->
-        <div class="sim-highlight-row">
-          <button
-            id="sim-highlight-btn"
-            class="hl-pill"
-            type="button"
-            title="Toggle highlight overlay"
-            aria-pressed="true"
-          >
-            <span class="hl-pill-icon" aria-hidden="true">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor">
-                <path d="M2 11.5A.5.5 0 0 1 2.5 11h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
-                <path d="M3.5 7.293l4.5-4.5 4.5 4.5L11 8.793 8.5 6.293V13h-1V6.293L5 8.793 3.5 7.293z"/>
-              </svg>
-            </span>
-            <span class="hl-pill-label">Highlight</span>
-            <span class="hl-pill-dot" aria-hidden="true"></span>
-          </button>
-          <input type="color" id="sim-highlight-color" value="#00ff88" title="Highlight color" />
+        <!-- Highlight Settings -->
+        <div class="sim-setting-row">
+          <div class="sim-setting-left">
+            <input type="color" id="sim-highlight-color" value="#00ff88" title="Highlight color" />
+            <span class="sim-label">Highlight</span>
+          </div>
+          <label class="switch" title="Toggle highlight overlay">
+            <input type="checkbox" id="sim-highlight-btn" />
+            <span class="slider"></span>
+          </label>
         </div>
 
-        <!-- Global Position Controls -->
-        <div class="pos-global-row">
+        <!-- Position Settings -->
+        <div class="sim-setting-row">
           <span class="sim-label">Position</span>
           <div class="pos-pad">
             <button type="button" class="pos-btn" data-dir="prev" aria-label="Previous">&lt;</button>
@@ -133,22 +124,20 @@
 
 
         <!-- Templates -->
-        <details class="sim-section">
-          <summary>Templates (A/B)</summary>
-          <div class="sim-section-body">
-            <div class="tpl-row">
-              <select id="tpl-select" class="tpl-select">
-                <option value="">— select —</option>
-              </select>
-              <button id="tpl-load" class="sim-mini" type="button">Load</button>
-              <button id="tpl-delete" class="sim-mini" type="button">Delete</button>
-            </div>
-            <div class="tpl-row">
-              <input id="tpl-name" type="text" maxlength="40" placeholder="Template name" class="tpl-name" />
-              <button id="tpl-save" class="sim-mini" type="button">Save</button>
-            </div>
+        <div class="sim-field">
+          <span>Templates (A/B)</span>
+          <div class="tpl-row">
+            <select id="tpl-select" class="tpl-select">
+              <option value="">— select —</option>
+            </select>
+            <button id="tpl-load" class="sim-mini" type="button">Load</button>
+            <button id="tpl-delete" class="sim-mini" type="button">Delete</button>
           </div>
-        </details>
+          <div class="tpl-row">
+            <input id="tpl-name" type="text" maxlength="40" placeholder="Template name" class="tpl-name" />
+            <button id="tpl-save" class="sim-mini" type="button">Save</button>
+          </div>
+        </div>
 
         <div class="sim-row">
           <span class="sim-spacer"></span>

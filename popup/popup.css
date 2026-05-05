@@ -644,10 +644,9 @@ kbd {
 
 .pos-pad {
   display: grid;
-  grid-template-columns: 26px 1fr 26px;
+  grid-template-columns: 32px 76px 32px;
   align-items: center;
   gap: 6px;
-  flex: 1;
 }
 
 .pos-btn {

@@ -40,3 +40,22 @@ html.ytlab-active [data-ytlab-sim] #avatar img,
 html.ytlab-active [data-ytlab-sim] yt-img-shadow img {
   filter: none !important;
 }
+
+/* ── Sim card rounded highlight overlay ── */
+/* Uses ::before so border-radius matches the card's natural rounding.        */
+/* --ytlab-hl-color is set inline by content.js per the user's chosen color. */
+[data-ytlab-sim].ytlab-sim-highlight {
+  position: relative;
+}
+
+[data-ytlab-sim].ytlab-sim-highlight::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: -3px;
+  border: 2.5px solid var(--ytlab-hl-color, #00ff88);
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ytlab-hl-color, #00ff88) 30%, transparent),
+              0 0 10px color-mix(in srgb, var(--ytlab-hl-color, #00ff88) 35%, transparent);
+  z-index: 9999;
+}

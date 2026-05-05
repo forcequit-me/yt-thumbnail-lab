@@ -16,7 +16,7 @@ function removeInjected() {
   document.querySelectorAll(`[${SIM_ATTR}]`).forEach((n) => n.remove());
 }
 
-function findByAncestorItem(itemTag, index) {
+function findByAncestorItem(itemTag) {
   const items = Array.from(
     document.querySelectorAll(`${itemTag}:not([${SIM_ATTR}])`)
   );
@@ -27,12 +27,7 @@ function findByAncestorItem(itemTag, index) {
     (el) => el.tagName.toLowerCase() === itemTag && !el.hasAttribute(SIM_ATTR)
   );
   if (siblings.length === 0) return null;
-  return {
-    container,
-    itemTag,
-    items: siblings,
-    index: Math.min(index, siblings.length),
-  };
+  return { container, itemTag, items: siblings };
 }
 
 function findItemsInScope(scope, itemTag) {
@@ -46,24 +41,22 @@ function findItemsInScope(scope, itemTag) {
     (el) => el.tagName.toLowerCase() === itemTag && !el.hasAttribute(SIM_ATTR)
   );
   if (siblings.length === 0) return null;
-  return {
-    container,
-    itemTag,
-    items: siblings,
-    index: Math.min(1, siblings.length),
-  };
+  return { container, itemTag, items: siblings };
 }
 
 function findContainerAndTemplate() {
   const path = location.pathname;
   if (path === "/" || path.startsWith("/feed")) {
-    return findByAncestorItem("ytd-rich-item-renderer", 1);
+    const t = findByAncestorItem("ytd-rich-item-renderer");
+    if (t) t.page = "home";
+    return t;
   }
   if (path === "/results") {
-    return findByAncestorItem("ytd-video-renderer", 1);
+    const t = findByAncestorItem("ytd-video-renderer");
+    if (t) t.page = "search";
+    return t;
   }
   if (path === "/watch") {
-    // Find the sidebar container — YouTube uses several possible structures
     const sidebar =
       document.querySelector("#secondary") ||
       document.querySelector("#related") ||
@@ -71,7 +64,6 @@ function findContainerAndTemplate() {
 
     const scope = sidebar || document;
 
-    // Try all known video item types inside the sidebar
     const itemTypes = [
       "yt-lockup-view-model",
       "ytd-compact-video-renderer",
@@ -81,21 +73,43 @@ function findContainerAndTemplate() {
 
     for (const tag of itemTypes) {
       const result = findItemsInScope(scope, tag);
-      if (result) return result;
+      if (result) { result.page = "watch"; return result; }
     }
 
-    // Fallback: search inside item-section-renderer #contents
     const sections = scope.querySelectorAll("ytd-item-section-renderer #contents");
     for (const section of sections) {
       for (const tag of itemTypes) {
         const result = findItemsInScope(section, tag);
-        if (result) return result;
+        if (result) { result.page = "watch"; return result; }
       }
     }
 
     return null;
   }
   return null;
+}
+
+// Compute insertion index: center of items + position offset.
+// Home is a CSS grid (multiple cols) — derive cols from bounding rect tops.
+// Search/watch are linear lists; x is ignored.
+function computeInsertIndex(items, page, x, y) {
+  const len = items.length;
+  if (len === 0) return 0;
+  const center = Math.floor(len / 2);
+  if (page === "home") {
+    const tops = items.map((el) => Math.round(el.getBoundingClientRect().top));
+    const firstTop = tops[0];
+    let cols = 0;
+    for (const t of tops) {
+      if (t === firstTop) cols++;
+      else break;
+    }
+    if (cols < 1) cols = 1;
+    const idx = center + y * cols + x;
+    return Math.max(0, Math.min(idx, len));
+  }
+  const idx = center + y;
+  return Math.max(0, Math.min(idx, len));
 }
 
 function neutralizeLinks(node) {
@@ -674,8 +688,9 @@ function buildSimNode(sim, template) {
   // it fine. box-shadow gets clipped by parent overflow:hidden in the watch
   // sidebar, so use outline.
   if (sim.highlight !== false) {
-    clone.style.outline = "2px solid #00ff88";
-    clone.style.outlineOffset = "2px";
+    const color = sim.highlightColor || "#00ff88";
+    clone.style.setProperty("--ytlab-hl-color", color);
+    clone.classList.add("ytlab-sim-highlight");
   }
 
   return clone;
@@ -733,7 +748,10 @@ function injectOnce() {
   // tries again once the lazy-loaded data arrives.
   if (!template) return false;
 
-  const anchor = target.items[Math.min(target.index, target.items.length - 1)];
+  const posMap = sim.position || {};
+  const pos = posMap[target.page] || { x: 0, y: 0 };
+  const insertIdx = computeInsertIndex(target.items, target.page, pos.x | 0, pos.y | 0);
+  const anchor = target.items[insertIdx];
   const clone = buildSimNode(sim, template);
   if (anchor) target.container.insertBefore(clone, anchor);
   else target.container.appendChild(clone);

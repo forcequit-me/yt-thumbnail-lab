@@ -14,11 +14,12 @@ Three uses:
 
 ## Features
 
-- Toggle every YouTube thumbnail to grayscale with one click.
-- Right-click any YouTube page for a toggle menu entry.
-- Keyboard shortcut: `Alt+Shift+B`.
 - **Thumbnail Simulator.** Upload your thumbnail and avatar, fill in title, channel, view count, duration, and description. The extension drops a fake video card into the home feed, search results, and watch-page sidebar so you can preview against live cards.
-- Save default values you can reset to with one click.
+- **Custom highlight color.** Pick any color for the outline around your simulated card.
+- **Position controls.** Move the simulated card up, down, left, or right per page (home, search, watch sidebar). Defaults to centered.
+- **Templates for A/B testing.** Save multiple named configurations (different thumbnails, titles, etc.), switch between them, and delete with confirmation.
+- **Quick-slot default.** Save your usual setup and reload it with one click.
+- **B&W mode.** Toggle every YouTube thumbnail to grayscale. Keyboard shortcut: `Alt+Shift+B`. Right-click any YouTube page for a toggle menu entry.
 - Auto-saves as you type. Settings stay on your machine. No tracking. No network requests.
 
 ## Installation
@@ -43,22 +44,13 @@ To remove, click **Remove** on the extension's card.
 
 ## Usage
 
-### Toggle on or off
-
-Three ways:
-
-- Click the toolbar icon and hit the power button.
-- Right-click any YouTube page and pick **YT Thumbnail Lab: turn off / turn on**.
-- Press `Alt+Shift+B` on any YouTube page.
-
-The toolbar icon is dark when off, green when on.
-
 ### The Simulator
 
-Open the popup. Flip the **Simulator** slider on. The settings panel expands.
+Open the popup. Click the **power button** to turn the simulator on. The settings panel expands.
 
 | Field | Notes |
 |---|---|
+| Highlight | Toggle the outline on/off. The color picker next to it sets the outline color. |
 | Thumbnail | PNG or JPG. |
 | Channel avatar | Optional. Replaces the avatar on the simulated card. |
 | Title | Up to 100 characters. |
@@ -66,24 +58,51 @@ Open the popup. Flip the **Simulator** slider on. The settings panel expands.
 | Duration | e.g. `10:24` or `1:49:42`. |
 | Views · Age | One line, e.g. `1.2M views • 3 days ago`. |
 | Description | Up to 300 characters. Shows on the search results page only. |
-| Highlight | Green outline around the simulated card. |
 
-Where the simulated card lands:
+Click the power button again to remove the card. Clicking the simulated card does nothing — it is a preview, not a real video.
 
-- Home / feed: third slot of the grid.
-- Search results: third result.
-- Watch page sidebar: second recommendation.
+### Position
 
-Turn the slider off to remove the card. Clicking the card does nothing. It is a preview, not a real video.
+The simulated card lands in the middle slot by default on each page. Open **Position** in the popup to nudge it:
 
-### Save default / Reset
+- Three rows: **Home**, **Search**, **Watch** (sidebar).
+- Four arrows per row: ▲ ▼ ◀ ▶. The readout shows the current `x,y` offset from center.
+- On the home grid, ◀▶ moves one column and ▲▼ moves one row. On search and watch (linear lists), ◀▶ has no effect — only ▲▼.
+- **Center all** resets every page to `0,0`.
 
-Two small buttons at the bottom of the simulator panel:
+### Templates (A/B testing)
 
-- **Save default.** Stores everything in the form (title, channel, thumbnail, avatar, etc.) as your default.
-- **Reset.** Reloads your saved default. Useful when you want to test a different thumbnail and then return to your usual setup.
+Open **Templates** in the popup to save multiple named configurations:
+
+- Type a name and click **Save** to store the current card content (thumbnail, avatar, title, channel, duration, views/age, description), the highlight on/off toggle, and the position offsets.
+- Pick a name from the dropdown and click **Load** to swap to it.
+- **Delete** removes the selected template. Confirmation required.
+- Saving over an existing name asks for confirmation first.
+
+Templates **do not** carry the highlight color — that is a global preference (see below).
+
+### Quick-slot default
+
+At the bottom of the simulator panel:
+
+- **Save default.** Stores card content only (thumbnail, avatar, title, channel, duration, views/age, description). Excludes position, highlight toggle, and highlight color — so loading the default doesn't disturb your layout or color preference.
+- **Reset.** Restores those content fields. Position offsets and highlight color stay where you have them. Useful when you want a clean starting point to build a new template variant.
 
 If you haven't saved a default yet, **Reset** does nothing.
+
+### Highlight color (global preference)
+
+The color picker on the Highlight row auto-saves whenever you change it. It is **not** stored inside templates or the default — pick it once and it stays across every load.
+
+### B&W mode
+
+The **B&W** slider in the popup turns every YouTube thumbnail grayscale. Independent from the simulator — you can use either or both. Three ways to toggle:
+
+- Click the popup's B&W slider.
+- Right-click any YouTube page and pick **YT Thumbnail Lab: turn off / turn on**.
+- Press `Alt+Shift+B` on any YouTube page.
+
+The toolbar icon is dark when B&W is off, green when on.
 
 ## Troubleshooting
 

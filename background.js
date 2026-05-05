@@ -1,3 +1,9 @@
+const DEFAULT_POSITION = {
+  home:   { x: 0, y: 0 },
+  search: { x: 0, y: 0 },
+  watch:  { x: 0, y: 0 },
+};
+
 const DEFAULT_SIM = {
   enabled: false,
   thumbnail: "",
@@ -8,6 +14,8 @@ const DEFAULT_SIM = {
   description: "",
   duration: "10:24",
   highlight: true,
+  highlightColor: "#00ff88",
+  position: DEFAULT_POSITION,
 };
 
 const DEFAULT_STATE = {
@@ -16,6 +24,7 @@ const DEFAULT_STATE = {
 };
 
 const MENU_ID = "ytlab-toggle";
+const MENU_SIM_ID = "ytlab-sim-toggle";
 
 function iconPaths(active) {
   const suffix = active ? "-on" : "";
@@ -35,7 +44,15 @@ async function updateIcon(active) {
 async function updateMenu(active) {
   try {
     await chrome.contextMenus.update(MENU_ID, {
-      title: active ? "YT Thumbnail Lab: turn off" : "YT Thumbnail Lab: turn on",
+      title: active ? "YT Thumbnail Lab: B\u0026W off" : "YT Thumbnail Lab: B\u0026W on",
+    });
+  } catch (e) {}
+}
+
+async function updateMenuSim(simEnabled) {
+  try {
+    await chrome.contextMenus.update(MENU_SIM_ID, {
+      title: simEnabled ? "YT Thumbnail Lab: Simulator off" : "YT Thumbnail Lab: Simulator on",
     });
   } catch (e) {}
 }
@@ -50,11 +67,25 @@ async function broadcastState(state) {
   }
 }
 
+function mergeSim(stored) {
+  const s = stored || {};
+  const pos = s.position || {};
+  return {
+    ...DEFAULT_SIM,
+    ...s,
+    position: {
+      home:   { ...DEFAULT_POSITION.home,   ...(pos.home   || {}) },
+      search: { ...DEFAULT_POSITION.search, ...(pos.search || {}) },
+      watch:  { ...DEFAULT_POSITION.watch,  ...(pos.watch  || {}) },
+    },
+  };
+}
+
 async function getState() {
   const stored = await chrome.storage.local.get(DEFAULT_STATE);
   return {
     active: !!stored.active,
-    sim: { ...DEFAULT_SIM, ...(stored.sim || {}) },
+    sim: mergeSim(stored.sim),
   };
 }
 
@@ -68,26 +99,66 @@ async function setActive(active) {
 
 async function setSim(sim) {
   const current = await getState();
-  const merged = { ...current.sim, ...sim };
+  const merged = mergeSim({ ...current.sim, ...sim });
   await chrome.storage.local.set({ sim: merged });
   const state = await getState();
   await broadcastState(state);
 }
 
+// Fields stored in Save default — card content only. Excludes: enabled,
+// position (per-test layout), highlight bool, highlightColor (global pref).
+const DEFAULT_FIELDS = ["thumbnail", "avatar", "title", "channel", "meta", "description", "duration"];
+// Fields stored in templates — content + highlight on/off + position.
+// Excludes: enabled, highlightColor (global pref auto-saved on color change).
+const TEMPLATE_FIELDS = [...DEFAULT_FIELDS, "highlight", "position"];
+
+function pickFields(sim, fields) {
+  const out = {};
+  for (const k of fields) if (k in sim) out[k] = sim[k];
+  return out;
+}
+
 async function saveDefault(sim) {
-  // Strip "enabled" so re-enabling later doesn't auto-flip when reset
-  const { enabled, ...rest } = sim || {};
-  await chrome.storage.local.set({ simDefault: rest });
+  await chrome.storage.local.set({ simDefault: pickFields(sim || {}, DEFAULT_FIELDS) });
 }
 
 async function resetDefault() {
   const { simDefault } = await chrome.storage.local.get({ simDefault: null });
   if (!simDefault) return;
   const current = await getState();
-  // Preserve current enabled flag so toggling state isn't lost
-  const merged = { ...current.sim, ...simDefault, enabled: current.sim.enabled };
+  const merged = mergeSim({ ...current.sim, ...pickFields(simDefault, DEFAULT_FIELDS) });
   await chrome.storage.local.set({ sim: merged });
   await broadcastState(await getState());
+}
+
+async function listTemplates() {
+  const { simTemplates } = await chrome.storage.local.get({ simTemplates: {} });
+  return Object.keys(simTemplates || {}).sort();
+}
+
+async function saveTemplate(name, sim) {
+  if (!name) return;
+  const { simTemplates } = await chrome.storage.local.get({ simTemplates: {} });
+  simTemplates[name] = pickFields(sim || {}, TEMPLATE_FIELDS);
+  await chrome.storage.local.set({ simTemplates });
+}
+
+async function loadTemplate(name) {
+  const { simTemplates } = await chrome.storage.local.get({ simTemplates: {} });
+  const tpl = simTemplates && simTemplates[name];
+  if (!tpl) return;
+  const current = await getState();
+  const merged = mergeSim({ ...current.sim, ...pickFields(tpl, TEMPLATE_FIELDS) });
+  await chrome.storage.local.set({ sim: merged });
+  await broadcastState(await getState());
+}
+
+async function deleteTemplate(name) {
+  const { simTemplates } = await chrome.storage.local.get({ simTemplates: {} });
+  if (simTemplates && simTemplates[name]) {
+    delete simTemplates[name];
+    await chrome.storage.local.set({ simTemplates });
+  }
 }
 
 async function toggle() {
@@ -95,14 +166,30 @@ async function toggle() {
   await setActive(!active);
 }
 
+async function toggleSim() {
+  const state = await getState();
+  const next = !state.sim.enabled;
+  const merged = mergeSim({ ...state.sim, enabled: next });
+  await chrome.storage.local.set({ sim: merged });
+  const newState = await getState();
+  await updateMenuSim(newState.sim.enabled);
+  await broadcastState(newState);
+}
+
 async function ensureMenu() {
-  const { active } = await getState();
+  const state = await getState();
   try {
     await chrome.contextMenus.removeAll();
   } catch (e) {}
   chrome.contextMenus.create({
     id: MENU_ID,
-    title: active ? "YT Thumbnail Lab: turn off" : "YT Thumbnail Lab: turn on",
+    title: state.active ? "YT Thumbnail Lab: B\u0026W off" : "YT Thumbnail Lab: B\u0026W on",
+    contexts: ["all"],
+    documentUrlPatterns: ["*://*.youtube.com/*"],
+  });
+  chrome.contextMenus.create({
+    id: MENU_SIM_ID,
+    title: state.sim.enabled ? "YT Thumbnail Lab: Simulator off" : "YT Thumbnail Lab: Simulator on",
     contexts: ["all"],
     documentUrlPatterns: ["*://*.youtube.com/*"],
   });
@@ -122,10 +209,12 @@ chrome.runtime.onStartup.addListener(async () => {
 
 chrome.contextMenus.onClicked.addListener((info) => {
   if (info.menuItemId === MENU_ID) toggle();
+  if (info.menuItemId === MENU_SIM_ID) toggleSim();
 });
 
 chrome.commands.onCommand.addListener((command) => {
   if (command === "toggle-ytlab") toggle();
+  if (command === "toggle-sim") toggleSim();
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -152,6 +241,28 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg.type === "ytlab:resetDefault") {
     resetDefault().then(async () => sendResponse(await getState()));
+    return true;
+  }
+  if (msg.type === "ytlab:listTemplates") {
+    listTemplates().then((names) => sendResponse({ names }));
+    return true;
+  }
+  if (msg.type === "ytlab:saveTemplate") {
+    saveTemplate(msg.name, msg.sim || {}).then(async () => {
+      const names = await listTemplates();
+      sendResponse({ names });
+    });
+    return true;
+  }
+  if (msg.type === "ytlab:loadTemplate") {
+    loadTemplate(msg.name).then(async () => sendResponse(await getState()));
+    return true;
+  }
+  if (msg.type === "ytlab:deleteTemplate") {
+    deleteTemplate(msg.name).then(async () => {
+      const names = await listTemplates();
+      sendResponse({ names });
+    });
     return true;
   }
 });

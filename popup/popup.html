@@ -6,7 +6,7 @@
   </head>
   <body>
     <div class="stack">
-      <button id="toggle" class="power" aria-label="Toggle YT Thumbnail Lab">
+      <button id="toggle" class="power" aria-label="Toggle Simulator">
         <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
           <path
             d="M12 3v10"
@@ -25,17 +25,38 @@
         </svg>
       </button>
 
-      <!-- Simulator toggle slider -->
+      <!-- B&W toggle slider (was main feature, now secondary) -->
       <div class="sim-toggle-row">
-        <span class="sim-label">Simulator</span>
-        <label class="switch" id="sim-switch-label">
-          <input type="checkbox" id="sim-enabled" />
+        <span class="sim-label">B&amp;W</span>
+        <label class="switch" id="bw-switch-label">
+          <input type="checkbox" id="bw-enabled" />
           <span class="slider"></span>
         </label>
       </div>
 
       <!-- Collapsible simulator settings -->
       <div id="sim-panel" class="sim-panel" hidden>
+        <!-- Highlight row (top of panel) -->
+        <div class="sim-highlight-row">
+          <button
+            id="sim-highlight-btn"
+            class="hl-pill"
+            type="button"
+            title="Toggle highlight overlay"
+            aria-pressed="true"
+          >
+            <span class="hl-pill-icon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor">
+                <path d="M2 11.5A.5.5 0 0 1 2.5 11h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
+                <path d="M3.5 7.293l4.5-4.5 4.5 4.5L11 8.793 8.5 6.293V13h-1V6.293L5 8.793 3.5 7.293z"/>
+              </svg>
+            </span>
+            <span class="hl-pill-label">Highlight</span>
+            <span class="hl-pill-dot" aria-hidden="true"></span>
+          </button>
+          <input type="color" id="sim-highlight-color" value="#00ff88" title="Highlight color" />
+        </div>
+
         <label class="sim-field">
           <span>Thumbnail</span>
           <input type="file" id="sim-thumb" accept="image/*" />
@@ -48,7 +69,6 @@
           <small id="sim-avatar-status">No file selected</small>
         </label>
 
-        <!-- Hidden previews for data storage only -->
         <img id="sim-thumb-preview" alt="" style="display:none" />
         <img id="sim-avatar-preview" alt="" style="display:none" />
 
@@ -78,13 +98,65 @@
           <textarea id="sim-description" rows="2" maxlength="300" placeholder="First lines of description..."></textarea>
         </label>
 
+        <!-- Position controls -->
+        <details class="sim-section">
+          <summary>Position</summary>
+          <div class="sim-section-body">
+            <div class="pos-row" data-page="home">
+              <span class="pos-label">Home</span>
+              <div class="pos-pad">
+                <button type="button" class="pos-btn" data-dir="up" aria-label="Up">▲</button>
+                <button type="button" class="pos-btn" data-dir="left" aria-label="Left">◀</button>
+                <span class="pos-readout" data-readout="home">0,0</span>
+                <button type="button" class="pos-btn" data-dir="right" aria-label="Right">▶</button>
+                <button type="button" class="pos-btn" data-dir="down" aria-label="Down">▼</button>
+              </div>
+            </div>
+            <div class="pos-row" data-page="search">
+              <span class="pos-label">Search</span>
+              <div class="pos-pad">
+                <button type="button" class="pos-btn" data-dir="up" aria-label="Up">▲</button>
+                <button type="button" class="pos-btn" data-dir="left" aria-label="Left">◀</button>
+                <span class="pos-readout" data-readout="search">0,0</span>
+                <button type="button" class="pos-btn" data-dir="right" aria-label="Right">▶</button>
+                <button type="button" class="pos-btn" data-dir="down" aria-label="Down">▼</button>
+              </div>
+            </div>
+            <div class="pos-row" data-page="watch">
+              <span class="pos-label">Watch</span>
+              <div class="pos-pad">
+                <button type="button" class="pos-btn" data-dir="up" aria-label="Up">▲</button>
+                <button type="button" class="pos-btn" data-dir="left" aria-label="Left">◀</button>
+                <span class="pos-readout" data-readout="watch">0,0</span>
+                <button type="button" class="pos-btn" data-dir="right" aria-label="Right">▶</button>
+                <button type="button" class="pos-btn" data-dir="down" aria-label="Down">▼</button>
+              </div>
+            </div>
+            <button id="pos-reset" class="sim-mini" type="button">Center all</button>
+          </div>
+        </details>
+
+        <!-- Templates -->
+        <details class="sim-section">
+          <summary>Templates (A/B)</summary>
+          <div class="sim-section-body">
+            <div class="tpl-row">
+              <select id="tpl-select" class="tpl-select">
+                <option value="">— select —</option>
+              </select>
+              <button id="tpl-load" class="sim-mini" type="button">Load</button>
+              <button id="tpl-delete" class="sim-mini" type="button">Delete</button>
+            </div>
+            <div class="tpl-row">
+              <input id="tpl-name" type="text" maxlength="40" placeholder="Template name" class="tpl-name" />
+              <button id="tpl-save" class="sim-mini" type="button">Save</button>
+            </div>
+          </div>
+        </details>
+
         <div class="sim-row">
-          <label class="sim-check">
-            <input type="checkbox" id="sim-highlight" checked />
-            <span>Highlight</span>
-          </label>
           <span class="sim-spacer"></span>
-          <button id="sim-save-default" class="sim-mini" type="button" title="Save current values as your default">
+          <button id="sim-save-default" class="sim-mini" type="button" title="Save current values as your quick-slot default">
             Save default
           </button>
           <button id="sim-reset-default" class="sim-mini" type="button" title="Reload your saved default">
@@ -106,11 +178,13 @@
     <div id="help-panel" class="help-panel" hidden>
       <button id="help-close" class="help-close" aria-label="Close">×</button>
       <p class="help-line">
-        Turns every YouTube thumbnail to black and white.
+        Power button toggles the Simulator. B&amp;W slider turns every YouTube thumbnail to grayscale.
       </p>
       <ul class="help-list">
-        <li><b>Shortcut:</b> <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></li>
-        <li><b>Right-click</b> any YouTube page for a toggle menu item.</li>
+        <li><b>B&amp;W shortcut:</b> <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></li>
+        <li><b>Simulator shortcut:</b> <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></li>
+        <li><b>Right-click</b> any YouTube page to toggle B&amp;W or Simulator.</li>
+        <li><b>Templates</b> save sim configs for A/B testing.</li>
       </ul>
     </div>
 

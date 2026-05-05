@@ -72,7 +72,6 @@
               <span class="upload-label" id="thumb-label">Thumbnail</span>
             </button>
             <button type="button" class="upload-clear" id="thumb-clear-btn" hidden title="Clear thumbnail">&#x2715;</button>
-            <img id="sim-thumb-preview" class="upload-preview" alt="" hidden />
           </div>
           <div class="upload-slot" id="avatar-slot">
             <input type="file" id="sim-avatar" accept="image/*" tabindex="-1" />
@@ -86,8 +85,13 @@
               <span class="upload-label" id="avatar-label">Avatar</span>
             </button>
             <button type="button" class="upload-clear" id="avatar-clear-btn" hidden title="Clear avatar">&#x2715;</button>
-            <img id="sim-avatar-preview" class="upload-preview upload-preview--round" alt="" hidden />
           </div>
+        </div>
+
+        <!-- Composite preview: thumbnail + avatar badge -->
+        <div class="img-preview" id="img-preview" hidden>
+          <img id="sim-thumb-preview" class="img-preview-thumb" alt="" />
+          <img id="sim-avatar-preview" class="img-preview-avatar" alt="" hidden />
         </div>
 
         <label class="sim-field">

@@ -54,7 +54,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 12px 14px 14px;
+  padding: 17px 14px 14px;
 }
 
 /* ── Power button ── */
@@ -299,23 +299,46 @@ html, body {
   color: #fff;
 }
 
-.upload-preview {
+/* ── Composite image preview ── */
+.img-preview {
+  position: relative;
   width: 100%;
   aspect-ratio: 16/9;
-  object-fit: cover;
-  object-position: center;
-  border-radius: 5px;
+  border-radius: 7px;
+  overflow: visible;
   margin-top: 4px;
-  border: 1px solid var(--border);
-  display: block;
+  margin-bottom: 14px; /* space for avatar badge peeking below */
 }
 
-.upload-preview--round {
-  aspect-ratio: 1;
+.img-preview[hidden] { display: none; }
+
+.img-preview-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 7px;
+  display: block;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+}
+
+/* Avatar badge — small circle bottom-left, peeking below the thumbnail */
+.img-preview-avatar {
+  position: absolute;
+  bottom: -10px;
+  left: 8px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   object-fit: cover;
   object-position: center;
+  border: 2px solid var(--bg);
+  background: var(--input-bg);
+  display: block;
 }
+
+.img-preview-avatar[hidden] { display: none; }
 
 .sim-field textarea {
   font-size: 12px;

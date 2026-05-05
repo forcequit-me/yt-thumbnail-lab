@@ -92,7 +92,7 @@ async function getState() {
 async function setActive(active) {
   await chrome.storage.local.set({ active });
   const state = await getState();
-  await updateIcon(state.active);
+  await updateIcon(state.sim.enabled);
   await updateMenu(state.active);
   await broadcastState(state);
 }
@@ -102,6 +102,7 @@ async function setSim(sim) {
   const merged = mergeSim({ ...current.sim, ...sim });
   await chrome.storage.local.set({ sim: merged });
   const state = await getState();
+  await updateIcon(state.sim.enabled);
   await broadcastState(state);
 }
 
@@ -172,6 +173,7 @@ async function toggleSim() {
   const merged = mergeSim({ ...state.sim, enabled: next });
   await chrome.storage.local.set({ sim: merged });
   const newState = await getState();
+  await updateIcon(newState.sim.enabled);
   await updateMenuSim(newState.sim.enabled);
   await broadcastState(newState);
 }
@@ -196,14 +198,14 @@ async function ensureMenu() {
 }
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const { active } = await getState();
-  await updateIcon(active);
+  const state = await getState();
+  await updateIcon(state.sim.enabled);
   await ensureMenu();
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  const { active } = await getState();
-  await updateIcon(active);
+  const state = await getState();
+  await updateIcon(state.sim.enabled);
   await ensureMenu();
 });
 

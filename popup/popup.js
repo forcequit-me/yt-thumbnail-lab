@@ -35,6 +35,9 @@ let highlightActive = true;
 const simSaveDefault = document.getElementById("sim-save-default");
 const simResetDefault = document.getElementById("sim-reset-default");
 
+// Composite image preview
+const imgPreview = document.getElementById("img-preview");
+
 const posReset = document.getElementById("pos-reset");
 const posReadouts = document.querySelectorAll(".pos-readout");
 const posBtns = document.querySelectorAll(".pos-btn");
@@ -195,20 +198,25 @@ simHighlightColor.addEventListener("input", autoSave);
 });
 
 /* ── Upload slot UI helpers ── */
+function syncComposite() {
+  // Show composite if either image is loaded
+  imgPreview.hidden = !thumbnailDataUrl && !avatarDataUrl;
+}
+
 function setThumbLoaded(dataUrl) {
   simThumbPreview.src = dataUrl;
-  simThumbPreview.hidden = false;
   thumbSlot.classList.add("has-file");
   thumbLabel.textContent = "Thumbnail ✓";
   thumbClearBtn.hidden = false;
+  syncComposite();
 }
 function clearThumbUI() {
-  simThumbPreview.hidden = true;
   simThumbPreview.src = "";
   thumbSlot.classList.remove("has-file");
   thumbLabel.textContent = "Thumbnail";
   thumbClearBtn.hidden = true;
   simThumb.value = "";
+  syncComposite();
 }
 function setAvatarLoaded(dataUrl) {
   simAvatarPreview.src = dataUrl;
@@ -216,6 +224,7 @@ function setAvatarLoaded(dataUrl) {
   avatarSlot.classList.add("has-file");
   avatarLabel.textContent = "Avatar ✓";
   avatarClearBtn.hidden = false;
+  syncComposite();
 }
 function clearAvatarUI() {
   simAvatarPreview.hidden = true;
@@ -224,6 +233,7 @@ function clearAvatarUI() {
   avatarLabel.textContent = "Avatar";
   avatarClearBtn.hidden = true;
   simAvatar.value = "";
+  syncComposite();
 }
 
 /* ── File reader ── */

@@ -222,18 +222,18 @@ html, body {
 
 .upload-btn {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 5px;
   width: 100%;
-  padding: 10px 6px;
+  padding: 4px 6px;
   background: var(--input-bg);
   border: 1px dashed var(--border);
   border-radius: 7px;
   color: var(--muted);
   font: inherit;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.3px;
   cursor: pointer;
@@ -257,16 +257,12 @@ html, body {
   opacity: 1;
 }
 
-/* When slot has a file loaded — compact state */
+/* When slot has a file loaded — solid border + glow */
 .upload-slot.has-file .upload-btn {
-  padding: 4px 6px;
-  flex-direction: row;
-  gap: 5px;
   border-style: solid;
   border-color: var(--glow);
   color: var(--glow);
   background: #00ff8808;
-  font-size: 10px;
 }
 
 .upload-slot.has-file .upload-icon {
@@ -525,6 +521,23 @@ kbd {
   gap: 8px;
 }
 
+.sim-setting-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Position block: label own row, buttons own row ── */
+.sim-position-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+  width: 100%;
+}
+
 /* ── Highlight color swatch ── */
 #sim-highlight-color {
   width: 30px;
@@ -551,9 +564,11 @@ kbd {
 
 .pos-pad {
   display: grid;
-  grid-template-columns: 32px 76px 32px;
+  grid-template-columns: 1fr 2fr 1fr;
   align-items: center;
   gap: 6px;
+  width: 80%;
+  margin: 0 auto;
 }
 
 .pos-btn {
@@ -561,9 +576,9 @@ kbd {
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 12px;
   width: 100%;
-  height: 22px;
+  height: 28px;
   padding: 0;
   cursor: pointer;
   line-height: 1;

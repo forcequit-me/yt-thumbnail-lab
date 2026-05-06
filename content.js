@@ -1,6 +1,20 @@
 const ROOT_CLASS = "ytlab-active";
 const SIM_ATTR = "data-ytlab-sim";
 
+const SIM_FALLBACKS = {
+  title: "Your title goes here",
+  channel: "Your Channel",
+};
+
+function normalizeSim(sim) {
+  if (!sim) return sim;
+  return {
+    ...sim,
+    title: sim.title || SIM_FALLBACKS.title,
+    channel: sim.channel || SIM_FALLBACKS.channel,
+  };
+}
+
 let currentState = { active: false, sim: { enabled: false } };
 let observer = null;
 let pending = null;
@@ -863,7 +877,7 @@ function onNavigate() {
 }
 
 function applyAll(state) {
-  currentState = state;
+  currentState = state ? { ...state, sim: normalizeSim(state.sim) } : state;
   applyGrayscale(state.active);
 
   if (state.sim && state.sim.enabled) {

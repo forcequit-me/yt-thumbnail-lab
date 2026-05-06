@@ -27,7 +27,7 @@
 
       <!-- B&W toggle slider (was main feature, now secondary) -->
       <div class="sim-toggle-row">
-        <span class="sim-label">B&amp;W</span>
+        <span class="sim-label">Black &amp; White</span>
         <label class="switch" id="bw-switch-label">
           <input type="checkbox" id="bw-enabled" />
           <span class="slider"></span>
@@ -38,18 +38,18 @@
       <div id="sim-panel" class="sim-panel" hidden>
         <!-- Highlight Settings -->
         <div class="sim-setting-row">
-          <div class="sim-setting-left">
+          <span class="sim-label">Highlight</span>
+          <div class="sim-setting-right">
             <input type="color" id="sim-highlight-color" value="#00ff88" title="Highlight color" />
-            <span class="sim-label">Highlight</span>
+            <label class="switch" title="Toggle highlight overlay">
+              <input type="checkbox" id="sim-highlight-btn" />
+              <span class="slider"></span>
+            </label>
           </div>
-          <label class="switch" title="Toggle highlight overlay">
-            <input type="checkbox" id="sim-highlight-btn" />
-            <span class="slider"></span>
-          </label>
         </div>
 
         <!-- Position Settings -->
-        <div class="sim-setting-row">
+        <div class="sim-position-block">
           <span class="sim-label">Position</span>
           <div class="pos-pad">
             <button type="button" class="pos-btn" data-dir="prev" aria-label="Previous">&lt;</button>
@@ -97,13 +97,13 @@
 
         <label class="sim-field">
           <span>Title</span>
-          <input type="text" id="sim-title" maxlength="100" />
+          <input type="text" id="sim-title" maxlength="100" placeholder="Your title goes here" />
         </label>
 
         <div class="sim-pair">
           <label class="sim-field sim-grow">
             <span>Channel</span>
-            <input type="text" id="sim-channel" maxlength="50" />
+            <input type="text" id="sim-channel" maxlength="50" placeholder="Your Channel" />
           </label>
           <label class="sim-field sim-shrink">
             <span>Duration</span>
@@ -163,12 +163,12 @@
     <div id="help-panel" class="help-panel" hidden>
       <button id="help-close" class="help-close" aria-label="Close">×</button>
       <p class="help-line">
-        Power button toggles the Simulator. B&amp;W slider turns every YouTube thumbnail to grayscale.
+        Power button toggles the Simulator. Black &amp; White slider turns every YouTube thumbnail to grayscale.
       </p>
       <ul class="help-list">
-        <li><b>B&amp;W shortcut:</b> <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></li>
+        <li><b>Black &amp; White shortcut:</b> <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></li>
         <li><b>Simulator shortcut:</b> <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></li>
-        <li><b>Right-click</b> any YouTube page to toggle B&amp;W or Simulator.</li>
+        <li><b>Right-click</b> any YouTube page to toggle Black &amp; White or Simulator.</li>
         <li><b>Templates</b> save sim configs for A/B testing.</li>
       </ul>
     </div>

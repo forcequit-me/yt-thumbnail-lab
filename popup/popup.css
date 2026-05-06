@@ -288,10 +288,10 @@ html, body {
 /* Avatar area — small circle bottom-left, peeking below */
 .avatar-slot {
   position: absolute;
-  bottom: -16px;
+  bottom: -18px;
   left: 8px;
-  width: 36px;
-  height: 36px;
+  width: 41px;
+  height: 41px;
   z-index: 2;
 }
 

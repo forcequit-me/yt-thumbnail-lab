@@ -300,6 +300,8 @@ function swapThumbnails(node, dataUrl) {
       if (img.closest(AVATAR_SELECTOR)) return;
       img.removeAttribute("srcset");
       img.src = dataUrl;
+      img.style.setProperty("object-fit", "cover", "important");
+      img.style.setProperty("object-position", "center", "important");
       img.style.opacity = "1";
       img.style.display = "block";
       img.removeAttribute("hidden");
@@ -628,13 +630,14 @@ function swapAvatar(node, dataUrl) {
       img.removeAttribute("srcset");
       img.src = dataUrl;
       img.style.setProperty("object-fit", "cover", "important");
+      img.style.setProperty("object-position", "center", "important");
       markImageLoaded(img);
     } else {
       const newImg = document.createElement("img");
       newImg.src = dataUrl;
       newImg.className = "ytCoreImageHost ytSpecAvatarShapeImage ytCoreImageLoaded";
       newImg.style.cssText =
-        "width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;";
+        "width:100%;height:100%;object-fit:cover;object-position:center;border-radius:50%;display:block;";
       container.appendChild(newImg);
     }
   });

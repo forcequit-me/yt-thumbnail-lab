@@ -102,7 +102,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2px;
+  margin-top: 9px;
 }
 
 .sim-label {

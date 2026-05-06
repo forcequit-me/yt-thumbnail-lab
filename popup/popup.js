@@ -362,10 +362,12 @@ tplDelete.addEventListener("click", () => {
 /* ── Help panel ── */
 helpBtn.addEventListener("click", () => {
   helpPanel.hidden = false;
+  document.body.classList.add("help-open");
 });
 
 helpClose.addEventListener("click", () => {
   helpPanel.hidden = true;
+  document.body.classList.remove("help-open");
 });
 
 /* ── External state sync (keyboard shortcut / right-click sim toggle) ── */

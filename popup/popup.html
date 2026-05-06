@@ -156,16 +156,42 @@
     </div>
 
     <div id="help-panel" class="help-panel" hidden>
-      <button id="help-close" class="help-close" aria-label="Close">×</button>
+      <div class="help-header">
+        <h3 class="help-title">YT Thumbnail Lab</h3>
+        <button id="help-close" class="help-close" aria-label="Close">×</button>
+      </div>
       <p class="help-line">
         Power button toggles the Simulator. Black &amp; White slider turns every YouTube thumbnail to grayscale.
       </p>
       <ul class="help-list">
-        <li><b>Black &amp; White shortcut:</b> <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></li>
-        <li><b>Simulator shortcut:</b> <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></li>
-        <li><b>Right-click</b> any YouTube page to toggle Black &amp; White or Simulator.</li>
-        <li><b>Templates</b> save sim configs for A/B testing.</li>
+        <li><span class="help-tag">B&amp;W</span><span class="help-desc"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></span></li>
+        <li><span class="help-tag">Simulator</span><span class="help-desc"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></span></li>
+        <li><span class="help-tag">Highlight</span><span class="help-desc">Color outline around the simulated card</span></li>
+        <li><span class="help-tag">Position</span><span class="help-desc">Nudge the sim card left or right; Recenter resets to the default slot and scrolls it into view</span></li>
+        <li><span class="help-tag">Right-click</span><span class="help-desc">Quick toggle from any YouTube page</span></li>
+        <li><span class="help-tag">Templates</span><span class="help-desc">Save sim configs for A/B testing</span></li>
+        <li><span class="help-tag">Default</span><span class="help-desc">One-click save/reset of your usual sim setup</span></li>
+        <li><span class="help-tag">Description</span><span class="help-desc">Only renders on search results pages</span></li>
+        <li><span class="help-tag">Auto-save</span><span class="help-desc">All sim fields save as you type</span></li>
       </ul>
+      <div class="help-footer">
+        <span class="help-byline">Built by Force Quit</span>
+        <div class="help-social-row">
+          <a href="https://linktr.ee/ForceQuit" target="_blank" rel="noopener noreferrer" class="help-social" title="All my links">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/>
+              <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/>
+            </svg>
+            <span>Links</span>
+          </a>
+          <a href="https://www.patreon.com/cw/ForceQuit" target="_blank" rel="noopener noreferrer" class="help-social help-social-support" title="Support development on Patreon">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <span>Support</span>
+          </a>
+        </div>
+      </div>
     </div>
 
     <script src="popup.js"></script>

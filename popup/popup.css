@@ -959,3 +959,26 @@ kbd {
   background: var(--glow);
   color: var(--on);
 }
+
+.sim-meta-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.sim-meta-row .meta-num { width: 56px; }
+.sim-meta-row .meta-unit { width: 56px; }
+.sim-meta-row .meta-period { flex: 1 1 auto; min-width: 96px; }
+.sim-meta-row .meta-sep {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.sim-meta-row input[type="number"]::-webkit-inner-spin-button,
+.sim-meta-row input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.sim-meta-row input[type="number"] {
+  -moz-appearance: textfield;
+}

@@ -22,7 +22,10 @@ const avatarPickBtn = document.getElementById("avatar-pick-btn");
 const avatarClearBtn = document.getElementById("avatar-clear-btn");
 const simTitle = document.getElementById("sim-title");
 const simChannel = document.getElementById("sim-channel");
-const simMeta = document.getElementById("sim-meta");
+const simViewsNum  = document.getElementById("sim-views-num");
+const simViewsUnit = document.getElementById("sim-views-unit");
+const simAgeNum    = document.getElementById("sim-age-num");
+const simAgeUnit   = document.getElementById("sim-age-unit");
 const simDescription = document.getElementById("sim-description");
 const simDuration = document.getElementById("sim-duration");
 const simHighlightBtn = document.getElementById("sim-highlight-btn");
@@ -70,7 +73,7 @@ function render(state) {
 
   simTitle.value = sim.title || "";
   simChannel.value = sim.channel || "";
-  simMeta.value = sim.meta || "";
+  parseMeta(sim.meta || "");
   simDescription.value = sim.description || "";
   simDuration.value = sim.duration || "";
   highlightActive = sim.highlight !== false;
@@ -109,7 +112,7 @@ function getSimObject() {
     avatar: avatarDataUrl,
     title: simTitle.value.trim(),
     channel: simChannel.value.trim(),
-    meta: simMeta.value.trim(),
+    meta: composeMeta(),
     description: simDescription.value,
     duration: simDuration.value.trim(),
     enabled: btn.classList.contains("on"),
@@ -117,6 +120,36 @@ function getSimObject() {
     highlightColor: simHighlightColor.value || "#00ff88",
     position,
   };
+}
+
+/* ── Views/Age compose + parse ── */
+function composeMeta() {
+  const vn = simViewsNum.value.trim();
+  const vu = simViewsUnit.value;
+  const an = simAgeNum.value.trim();
+  const au = simAgeUnit.value;
+  if (!vn && !an) return "";
+  const views = vn
+    ? `${vn}${vu} view${vn === "1" && !vu ? "" : "s"}`
+    : "";
+  const ageNum = parseInt(an, 10);
+  const age = an ? `${ageNum} ${au}${ageNum === 1 ? "" : "s"} ago` : "";
+  return [views, age].filter(Boolean).join(" • ");
+}
+
+function parseMeta(str) {
+  const m = /^\s*(\d+(?:\.\d+)?)\s*([KMB]?)\s*views?\s*•\s*(\d+)\s*(second|minute|hour|day|week|month|year)s?\s*ago/i.exec(str || "");
+  if (m) {
+    simViewsNum.value  = m[1];
+    simViewsUnit.value = m[2].toUpperCase();
+    simAgeNum.value    = m[3];
+    simAgeUnit.value   = m[4].toLowerCase();
+  } else {
+    simViewsNum.value  = "";
+    simViewsUnit.value = "M";
+    simAgeNum.value    = "";
+    simAgeUnit.value   = "day";
+  }
 }
 
 /* ── Auto-save ── */
@@ -161,9 +194,11 @@ bwEnabled.addEventListener("change", () => {
 });
 
 /* ── Auto-save on field changes ── */
-[simTitle, simChannel, simMeta, simDescription, simDuration].forEach((el) => {
+[simTitle, simChannel, simDescription, simDuration].forEach((el) => {
   el.addEventListener("input", autoSave);
 });
+[simViewsNum, simAgeNum].forEach((el) => el.addEventListener("input", autoSave));
+[simViewsUnit, simAgeUnit].forEach((el) => el.addEventListener("change", autoSave));
 simHighlightBtn.addEventListener("change", () => {
   highlightActive = simHighlightBtn.checked;
   autoSave();
@@ -171,7 +206,7 @@ simHighlightBtn.addEventListener("change", () => {
 simHighlightColor.addEventListener("input", autoSave);
 
 /* ── Enter to blur ── */
-[simTitle, simChannel, simMeta, simDuration, tplName].forEach((el) => {
+[simTitle, simChannel, simDuration, tplName].forEach((el) => {
   el.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();

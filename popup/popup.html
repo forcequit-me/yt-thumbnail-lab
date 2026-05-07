@@ -50,7 +50,7 @@
 
         <!-- Position Settings -->
         <div class="sim-position-block">
-          <span class="sim-label">Position</span>
+          <span class="sim-label">Reposition</span>
           <div class="pos-pad">
             <button type="button" class="pos-btn" data-dir="prev" aria-label="Previous">&lt;</button>
             <button type="button" class="pos-btn" data-dir="center" aria-label="Recenter">Recenter</button>
@@ -106,10 +106,29 @@
           </label>
         </div>
 
-        <label class="sim-field">
+        <div class="sim-field">
           <span>Views · Age</span>
-          <input type="text" id="sim-meta" placeholder="1.2M views • 3 days ago" maxlength="60" />
-        </label>
+          <div class="sim-meta-row">
+            <input type="number" id="sim-views-num" min="0" max="999" step="1" placeholder="1" class="meta-num" />
+            <select id="sim-views-unit" class="meta-unit">
+              <option value="">—</option>
+              <option value="K">K</option>
+              <option value="M" selected>M</option>
+              <option value="B">B</option>
+            </select>
+            <span class="meta-sep">views •</span>
+            <input type="number" id="sim-age-num" min="1" max="999" step="1" placeholder="3" class="meta-num" />
+            <select id="sim-age-unit" class="meta-period">
+              <option value="second">seconds</option>
+              <option value="minute">minutes</option>
+              <option value="hour">hours</option>
+              <option value="day" selected>days</option>
+              <option value="week">weeks</option>
+              <option value="month">months</option>
+              <option value="year">years</option>
+            </select>
+          </div>
+        </div>
 
         <label class="sim-field">
           <span>Description (search only)</span>
@@ -167,7 +186,7 @@
         <li><span class="help-tag">B&amp;W</span><span class="help-desc"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></span></li>
         <li><span class="help-tag">Simulator</span><span class="help-desc"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></span></li>
         <li><span class="help-tag">Highlight</span><span class="help-desc">Color outline around the simulated card</span></li>
-        <li><span class="help-tag">Position</span><span class="help-desc">Nudge the sim card left or right; Recenter resets to the default slot and scrolls it into view</span></li>
+        <li><span class="help-tag">Reposition</span><span class="help-desc">Nudge the sim card left or right; Recenter resets to the default slot and scrolls it into view</span></li>
         <li><span class="help-tag">Right-click</span><span class="help-desc">Quick toggle from any YouTube page</span></li>
         <li><span class="help-tag">Templates</span><span class="help-desc">Save sim configs for A/B testing</span></li>
         <li><span class="help-tag">Default</span><span class="help-desc">One-click save/reset of your usual sim setup</span></li>

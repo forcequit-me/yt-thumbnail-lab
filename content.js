@@ -625,12 +625,22 @@ function swapAvatar(node, dataUrl) {
     (c) => c.closest(containerSel) === c
   );
   containers.forEach((container) => {
+    // freezeLitElements replaces yt-avatar-shape with a plain div, dropping
+    // YouTube's tag-targeted border-radius. Force round + clip on the wrapper
+    // so non-square source images still render as a circle via object-fit.
+    container.style.setProperty("border-radius", "50%", "important");
+    container.style.setProperty("overflow", "hidden", "important");
+    container.style.setProperty("aspect-ratio", "1 / 1", "important");
+
     const img = container.querySelector("img");
     if (img) {
       img.removeAttribute("srcset");
       img.src = dataUrl;
+      img.style.setProperty("width", "100%", "important");
+      img.style.setProperty("height", "100%", "important");
       img.style.setProperty("object-fit", "cover", "important");
       img.style.setProperty("object-position", "center", "important");
+      img.style.setProperty("border-radius", "50%", "important");
       markImageLoaded(img);
     } else {
       const newImg = document.createElement("img");
@@ -817,10 +827,15 @@ function scheduleInject() {
     pending = null;
     try {
       const ok = injectOnce();
-      // If inject failed on a watch page, retry — sidebar loads late.
-      // Extended schedule covers slow connections / cold cache.
-      if (ok === false && location.pathname === "/watch") {
-        [500, 1000, 2000, 3500, 5500, 8000, 12000].forEach((delay) => {
+      // Retry on inject failure. Watch sidebar lazy-loads slowest; home/search
+      // cards arrive faster but can still race the MutationObserver during
+      // SPA route changes (Home → Search disappear-until-refresh bug).
+      if (ok === false) {
+        const isWatch = location.pathname === "/watch";
+        const delays = isWatch
+          ? [500, 1000, 2000, 3500, 5500, 8000, 12000]
+          : [300, 700, 1400, 2500, 4000, 6500];
+        delays.forEach((delay) => {
           setTimeout(() => {
             if (!document.querySelector(`[${SIM_ATTR}]`)) {
               injectOnce();

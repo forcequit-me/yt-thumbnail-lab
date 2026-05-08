@@ -106,10 +106,8 @@ function render(state) {
 }
 
 /* ── Build current sim object ── */
-function getSimObject() {
-  return {
-    thumbnail: thumbnailDataUrl,
-    avatar: avatarDataUrl,
+function getSimObject({ includeAssets = true } = {}) {
+  const sim = {
     title: simTitle.value.trim(),
     channel: simChannel.value.trim(),
     meta: composeMeta(),
@@ -120,6 +118,11 @@ function getSimObject() {
     highlightColor: simHighlightColor.value || "#00ff88",
     position,
   };
+  if (includeAssets) {
+    sim.thumbnail = thumbnailDataUrl;
+    sim.avatar = avatarDataUrl;
+  }
+  return sim;
 }
 
 /* ── Views/Age compose + parse ── */
@@ -158,7 +161,10 @@ function autoSave() {
   if (loading) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    chrome.runtime.sendMessage({ type: "ytlab:setSim", sim: getSimObject() });
+    chrome.runtime.sendMessage({
+      type: "ytlab:setSim",
+      sim: getSimObject({ includeAssets: false }),
+    });
   }, 300);
 }
 function saveNow() {
@@ -180,7 +186,10 @@ btn.addEventListener("click", () => {
   simPanel.hidden = !next;
   // setSim with enabled flipped — getSimObject reads from button class
   chrome.runtime.sendMessage(
-    { type: "ytlab:setSim", sim: { ...getSimObject(), enabled: next } },
+    {
+      type: "ytlab:setSim",
+      sim: { ...getSimObject({ includeAssets: false }), enabled: next },
+    },
     (state) => state && render(state)
   );
 });

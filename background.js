@@ -67,6 +67,16 @@ async function broadcastState(state) {
   }
 }
 
+async function broadcastSimPatch(sim) {
+  const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
+  for (const tab of tabs) {
+    if (tab.id == null) continue;
+    chrome.tabs
+      .sendMessage(tab.id, { type: "ytlab:patchSim", sim })
+      .catch(() => {});
+  }
+}
+
 function mergeSim(stored) {
   const s = stored || {};
   const pos = s.position || {};
@@ -103,7 +113,12 @@ async function setSim(sim) {
   await chrome.storage.local.set({ sim: merged });
   const state = await getState();
   await updateIcon(state.sim.enabled);
-  await broadcastState(state);
+  await updateMenuSim(state.sim.enabled);
+  const assetChanged =
+    Object.prototype.hasOwnProperty.call(sim, "thumbnail") ||
+    Object.prototype.hasOwnProperty.call(sim, "avatar");
+  if (assetChanged) await broadcastState(state);
+  else await broadcastSimPatch(sim);
 }
 
 // Fields stored in Save default — card content only. Excludes: enabled,

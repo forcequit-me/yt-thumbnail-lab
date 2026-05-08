@@ -18,6 +18,41 @@ function normalizeSim(sim) {
 let currentState = { active: false, sim: { enabled: false } };
 let observer = null;
 let pending = null;
+let hasFetchedState = false;
+let navGeneration = 0;
+let scopedTimers = new Set();
+
+function getRouteKey() {
+  return `${location.pathname}${location.search}`;
+}
+
+let lastRouteKey = getRouteKey();
+
+function resetPositionCache() {
+  baseIndexMap = { home: -1, search: -1, watch: -1 };
+  lastPos = { home: "", search: "", watch: "" };
+}
+
+function nextGeneration() {
+  navGeneration += 1;
+}
+
+function setScopedTimeout(fn, delay) {
+  const generation = navGeneration;
+  const id = setTimeout(() => {
+    scopedTimers.delete(id);
+    if (generation !== navGeneration) return;
+    fn();
+  }, delay);
+  scopedTimers.add(id);
+  return id;
+}
+
+function clearScopedTimers() {
+  scopedTimers.forEach((id) => clearTimeout(id));
+  scopedTimers.clear();
+  pending = null;
+}
 
 function applyGrayscale(active) {
   const root = document.documentElement;
@@ -366,11 +401,56 @@ function makeThumbWrapper(dataUrl) {
   return wrapper;
 }
 
+function imageHasSource(img) {
+  return !!(
+    img.currentSrc ||
+    img.getAttribute("src") ||
+    img.getAttribute("srcset") ||
+    img.getAttribute("data-thumb")
+  );
+}
+
+function thumbnailBoxForImage(img) {
+  return img.closest("yt-thumbnail-view-model, ytd-thumbnail, a#thumbnail, #thumbnail, yt-image");
+}
+
+function hasUsableThumbnail(img) {
+  if (!imageHasSource(img)) return false;
+  if (img.complete && img.naturalWidth >= 16 && img.naturalHeight >= 9) return true;
+
+  const imgRect = img.getBoundingClientRect();
+  if (imgRect.width >= 16 && imgRect.height >= 9) return true;
+
+  const box = thumbnailBoxForImage(img);
+  if (!box) return false;
+  const boxRect = box.getBoundingClientRect();
+  return boxRect.width >= 80 && boxRect.height >= 45;
+}
+
+function thumbnailImages(node) {
+  return Array.from(
+    node.querySelectorAll(
+      "yt-thumbnail-view-model img, ytd-thumbnail img, a#thumbnail img, #thumbnail img, yt-image img"
+    )
+  ).filter((img) => !img.closest(AVATAR_SELECTOR));
+}
+
+function findReadyThumbnailImage(node) {
+  return thumbnailImages(node).find(hasUsableThumbnail) || null;
+}
+
 function swapThumbnails(node, dataUrl) {
   if (!dataUrl) return;
 
-  // Skip if we already swapped thumbnails in this node
-  if (node.querySelector("[data-ytlab-thumb]")) return;
+  const existingThumbs = node.querySelectorAll("[data-ytlab-thumb] img");
+  if (existingThumbs.length > 0) {
+    existingThumbs.forEach((img) => {
+      img.removeAttribute("srcset");
+      img.src = dataUrl;
+      markImageLoaded(img);
+    });
+    return;
+  }
 
   let swapped = false;
 
@@ -841,6 +921,16 @@ function applyAllSwaps(node, sim, capturedStyles, avatarLayout) {
   aggressiveSwap(node, sim);
 }
 
+function applyHighlight(node, sim) {
+  if (sim.highlight !== false) {
+    const color = sim.highlightColor || "#00ff88";
+    node.style.setProperty("--ytlab-hl-color", color);
+    node.classList.add("ytlab-sim-highlight");
+  } else {
+    node.classList.remove("ytlab-sim-highlight");
+  }
+}
+
 /**
  * Watch a cloned node for YouTube's Polymer trying to update it,
  * and re-apply our text overrides when that happens.
@@ -909,15 +999,7 @@ function buildSimNode(sim, template) {
   // tag-targeted layout CSS keeps working on homepage / search.
   clone = freezeLitElements(clone);
 
-  // Green highlight. outline previously broke insertion of the live
-  // yt-lockup-view-model custom element, but the frozen-to-div clone handles
-  // it fine. box-shadow gets clipped by parent overflow:hidden in the watch
-  // sidebar, so use outline.
-  if (sim.highlight !== false) {
-    const color = sim.highlightColor || "#00ff88";
-    clone.style.setProperty("--ytlab-hl-color", color);
-    clone.classList.add("ytlab-sim-highlight");
-  }
+  applyHighlight(clone, sim);
 
   return clone;
 }
@@ -958,31 +1040,24 @@ function injectOnce() {
       el.querySelector(".ytLockupMetadataViewModelTitle, a#video-title, h3 a") || el
     ).textContent || "";
     if (titleText.trim().length < 2) return false;
-    const img = el.querySelector("img");
-    if (!img || !img.getAttribute("src")) return false;
-    return true;
+    return !!findReadyThumbnailImage(el);
   };
 
-  let template = null;
-  for (const item of target.items) {
-    if (isAd(item)) continue;
-    if (!isPopulated(item)) continue;
-    template = item;
-    break;
-  }
+  const readyItems = target.items.filter((item) => !isAd(item) && isPopulated(item));
+  const template = readyItems[0] || null;
   // If nothing populated yet, signal failure so the retry chain / poller
   // tries again once the lazy-loaded data arrives.
   if (!template) return false;
 
   const posMap = sim.position || {};
   const pos = posMap[target.page] || { x: 0, y: 0 };
-  const insertIdx = computeInsertIndex(target.items, target.page, pos.x | 0, pos.y | 0, pos.ts || 0);
-  const anchor = target.items[insertIdx];
+  const insertIdx = computeInsertIndex(readyItems, target.page, pos.x | 0, pos.y | 0, pos.ts || 0);
+  const anchor = readyItems[insertIdx];
   const clone = buildSimNode(sim, template);
   if (anchor) {
     anchor.parentNode.insertBefore(clone, anchor);
   } else {
-    const lastItem = target.items[target.items.length - 1];
+    const lastItem = readyItems[readyItems.length - 1];
     if (lastItem && lastItem.parentNode) {
       lastItem.parentNode.appendChild(clone);
     }
@@ -990,9 +1065,10 @@ function injectOnce() {
 
   // Delayed re-applications to fight Polymer re-renders
   [50, 150, 400, 800, 1500, 3000].forEach((delay) => {
-    setTimeout(() => {
+    setScopedTimeout(() => {
       if (!clone.isConnected) return;
       applyAllSwaps(clone, sim);
+      applyHighlight(clone, sim);
       freezeLitElements(clone);
     }, delay);
   });
@@ -1001,7 +1077,7 @@ function injectOnce() {
 
 function scheduleInject() {
   if (pending) return;
-  pending = setTimeout(() => {
+  pending = setScopedTimeout(() => {
     pending = null;
     try {
       const ok = injectOnce();
@@ -1014,7 +1090,7 @@ function scheduleInject() {
           ? [500, 1000, 2000, 3500, 5500, 8000, 12000]
           : [300, 700, 1400, 2500, 4000, 6500];
         delays.forEach((delay) => {
-          setTimeout(() => {
+          setScopedTimeout(() => {
             if (!document.querySelector(`[${SIM_ATTR}]`)) {
               injectOnce();
             }
@@ -1037,6 +1113,12 @@ function startObserver() {
   }
   observer.observe(root, { childList: true, subtree: true });
   scheduleInject();
+}
+
+function stopObserver() {
+  if (!observer) return;
+  observer.disconnect();
+  observer = null;
 }
 
 let injectPoller = null;
@@ -1075,30 +1157,77 @@ function stopInjectPoller() {
   if (injectPoller) { clearInterval(injectPoller); injectPoller = null; }
 }
 
-function onNavigate() {
+function positionStateKey(sim) {
+  const pos = sim && sim.position ? sim.position : {};
+  return JSON.stringify({
+    home: pos.home || {},
+    search: pos.search || {},
+    watch: pos.watch || {},
+  });
+}
+
+function assetWasCleared(prevSim, nextSim) {
+  if (!prevSim || !nextSim) return false;
+  return (!!prevSim.thumbnail && !nextSim.thumbnail) || (!!prevSim.avatar && !nextSim.avatar);
+}
+
+function patchExistingSim(sim) {
+  const clone = document.querySelector(`[${SIM_ATTR}]`);
+  if (!clone) return false;
+  applyAllSwaps(clone, sim);
+  applyHighlight(clone, sim);
+  return true;
+}
+
+function beginFreshInject() {
+  nextGeneration();
+  clearScopedTimers();
   removeInjected();
-  pending = null;
-  stopInjectPoller();
+  if (!isSupportedPath() || !currentState || !currentState.sim || !currentState.sim.enabled) {
+    stopObserver();
+    stopInjectPoller();
+    return;
+  }
+  startObserver();
   scheduleInject();
   startInjectPoller();
 }
 
-function applyAll(state) {
-  currentState = state ? { ...state, sim: normalizeSim(state.sim) } : state;
-  applyGrayscale(state.active);
-
-  if (state.sim && state.sim.enabled) {
-    // Always remove + re-inject so changed fields (thumb/title/avatar/etc.) appear.
-    removeInjected();
-    startObserver();
-    pending = null;
-    scheduleInject();
-    // Cover the hard-reload case where yt-navigate-finish never fires
-    startInjectPoller();
-  } else {
-    removeInjected();
-    stopInjectPoller();
+function onNavigate() {
+  const key = getRouteKey();
+  const routeChanged = key !== lastRouteKey;
+  if (key !== lastRouteKey) {
+    lastRouteKey = key;
+    resetPositionCache();
   }
+  if (
+    routeChanged ||
+    !document.querySelector(`[${SIM_ATTR}]`) ||
+    !isSupportedPath() ||
+    !currentState ||
+    !currentState.sim ||
+    !currentState.sim.enabled
+  ) {
+    beginFreshInject();
+  }
+}
+
+function applyAll(state) {
+  const previousState = currentState;
+  const nextState = state ? { ...state, sim: normalizeSim(state.sim) } : state;
+  currentState = nextState;
+  applyGrayscale(nextState.active);
+
+  if (!nextState.sim || !nextState.sim.enabled || !isSupportedPath()) {
+    beginFreshInject();
+    return;
+  }
+
+  const positionChanged = positionStateKey(previousState && previousState.sim) !== positionStateKey(nextState.sim);
+  const needsFreshTemplate = positionChanged || assetWasCleared(previousState && previousState.sim, nextState.sim);
+
+  if (!needsFreshTemplate && patchExistingSim(nextState.sim)) return;
+  beginFreshInject();
 }
 
 function fetchState(retries = 5) {
@@ -1109,6 +1238,7 @@ function fetchState(retries = 5) {
       if (retries > 0) setTimeout(() => fetchState(retries - 1), 400);
       return;
     }
+    hasFetchedState = true;
     applyAll(state);
   });
 }
@@ -1116,26 +1246,38 @@ fetchState();
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg && msg.type === "ytlab:setState" && msg.state) {
+    hasFetchedState = true;
     applyAll(msg.state);
+  }
+  if (msg && msg.type === "ytlab:patchSim" && msg.sim) {
+    if (!hasFetchedState) {
+      fetchState();
+      return;
+    }
+    applyAll({
+      ...(currentState || { active: false }),
+      sim: {
+        ...((currentState && currentState.sim) || {}),
+        ...msg.sim,
+      },
+    });
   }
 });
 
 function handleNavigate() {
   // Re-fetch state on navigate in case the initial fetch raced with a cold
   // service worker. If we already have state, just trigger the inject path.
-  if (!currentState || !currentState.sim) fetchState();
+  if (!hasFetchedState) fetchState();
   onNavigate();
 }
 window.addEventListener("yt-navigate-finish", handleNavigate);
 window.addEventListener("yt-page-data-updated", handleNavigate);
 
 // Fallback URL watcher — yt-navigate-finish doesn't always fire on SPA nav
-// in current YouTube builds, leaving the watch sidebar inject stuck waiting
-// for a refresh. Detect pathname changes directly.
-let lastPath = location.pathname;
+// in current YouTube builds. Track query too: /results search changes often
+// keep the same pathname.
 setInterval(() => {
-  if (location.pathname !== lastPath) {
-    lastPath = location.pathname;
+  if (getRouteKey() !== lastRouteKey) {
     handleNavigate();
   }
 }, 500);

@@ -164,6 +164,37 @@ function neutralizeLinks(node) {
 const AVATAR_SELECTOR =
   "#avatar, #channel-thumbnail, ytd-channel-avatar, yt-avatar-shape, .yt-avatar-shape, #avatar-container, yt-img-shadow";
 
+// Outer avatar containers — used to capture/lock size before freezeLitElements
+// strips tag-targeted CSS. Includes a#avatar-link (search variant).
+const AVATAR_CONTAINER_SEL =
+  "#avatar, #channel-thumbnail, ytd-channel-avatar, yt-avatar-shape, .yt-avatar-shape, #avatar-container, yt-img-shadow, a#avatar-link";
+
+function topLevelAvatarContainers(root) {
+  return Array.from(root.querySelectorAll(AVATAR_CONTAINER_SEL))
+    .filter((c) => c.closest(AVATAR_CONTAINER_SEL) === c);
+}
+
+function captureAvatarSizes(template) {
+  return topLevelAvatarContainers(template).map((el) => {
+    const cs = window.getComputedStyle(el);
+    return { width: cs.width, height: cs.height };
+  });
+}
+
+function applyAvatarSizes(clone, sizes) {
+  topLevelAvatarContainers(clone).forEach((el, i) => {
+    const s = sizes[i];
+    if (!s || s.width === "0px" || s.height === "0px") return;
+    el.style.setProperty("width", s.width, "important");
+    el.style.setProperty("height", s.height, "important");
+    el.style.setProperty("min-width", s.width, "important");
+    el.style.setProperty("min-height", s.height, "important");
+    el.style.setProperty("max-width", s.width, "important");
+    el.style.setProperty("max-height", s.height, "important");
+    el.style.setProperty("flex", "0 0 auto", "important");
+  });
+}
+
 /**
  * Replace yt-formatted-string custom elements with plain <span> elements
  * to prevent YouTube's Polymer framework from re-rendering our text overrides.
@@ -426,6 +457,11 @@ const STRIP_SELECTORS = [
   "ytd-shelf-renderer",
   "#chapters",
   "#inline-preview-player",
+  // Watch-progress / resume overlay — leaks red bar onto cloned sim thumbnail
+  "ytd-thumbnail-overlay-resume-playback-renderer",
+  "yt-thumbnail-overlay-progress-bar-view-model",
+  ".ytThumbnailOverlayProgressBarHost",
+  "#progress",
 ];
 
 function stripClutter(node) {
@@ -619,11 +655,7 @@ function swapAvatar(node, dataUrl) {
   // — the previous "3 avatars" bug came from unhiding hidden duplicate imgs
   // inside a single container, not from multiple containers. Just rewrite
   // src on the first <img> per container; secondary hidden imgs stay hidden.
-  const containerSel =
-    "#avatar, #channel-thumbnail, ytd-channel-avatar, yt-avatar-shape, .yt-avatar-shape, #avatar-container, yt-img-shadow, a#avatar-link";
-  const containers = Array.from(node.querySelectorAll(containerSel)).filter(
-    (c) => c.closest(containerSel) === c
-  );
+  const containers = topLevelAvatarContainers(node);
   containers.forEach((container) => {
     // freezeLitElements replaces yt-avatar-shape with a plain div, dropping
     // YouTube's tag-targeted border-radius. Force round + clip on the wrapper
@@ -715,14 +747,18 @@ function freezeLitElements(rootEl) {
 }
 
 function buildSimNode(sim, template) {
-  // Capture computed styles from in-DOM template before cloning
+  // Capture computed styles + avatar sizes from in-DOM template before cloning.
+  // freezeLitElements rewrites yt-img-shadow / yt-avatar-shape → div, dropping
+  // tag-targeted size CSS, so the clone needs sizes locked inline.
   const capturedStyles = captureFormattedStringStyles(template);
+  const capturedAvatars = captureAvatarSizes(template);
 
   let clone = template.cloneNode(true);
   clone.setAttribute(SIM_ATTR, "1");
   clone.removeAttribute("id");
 
   stripClutter(clone);
+  applyAvatarSizes(clone, capturedAvatars);
   applyAllSwaps(clone, sim, capturedStyles);
   neutralizeLinks(clone);
 
@@ -861,37 +897,47 @@ function startObserver() {
   scheduleInject();
 }
 
-let watchPoller = null;
+let injectPoller = null;
 
-function startWatchPoller() {
-  // Sidebar lazy-loads on /watch. Mutation observer can stop firing once the
-  // page settles, and yt-navigate-finish doesn't fire on hard reloads — so a
-  // dedicated poller keeps trying until injection succeeds. ~30s window.
-  if (watchPoller) return;
-  if (location.pathname !== "/watch") return;
+function isSupportedPath() {
+  const p = location.pathname;
+  return p === "/" || p.startsWith("/feed") || p === "/results" || p === "/watch";
+}
+
+function startInjectPoller() {
+  // Page content can lazy-load slowly on any of the 3 pages — watch sidebar
+  // is the worst offender (>30s after SPA nav from /results), but home grid
+  // and search results can also race the MutationObserver during SPA route
+  // changes. Keep polling until injection succeeds. Stop conditions: sim
+  // present, navigated to unsupported page, or sim disabled.
+  if (injectPoller) return;
+  if (!isSupportedPath()) return;
   if (!currentState.sim || !currentState.sim.enabled) return;
-  let attempts = 0;
-  watchPoller = setInterval(() => {
-    attempts++;
-    if (document.querySelector(`[${SIM_ATTR}]`) || attempts > 20) {
-      clearInterval(watchPoller);
-      watchPoller = null;
+  injectPoller = setInterval(() => {
+    if (
+      document.querySelector(`[${SIM_ATTR}]`) ||
+      !isSupportedPath() ||
+      !currentState.sim ||
+      !currentState.sim.enabled
+    ) {
+      clearInterval(injectPoller);
+      injectPoller = null;
       return;
     }
     injectOnce();
   }, 1500);
 }
 
-function stopWatchPoller() {
-  if (watchPoller) { clearInterval(watchPoller); watchPoller = null; }
+function stopInjectPoller() {
+  if (injectPoller) { clearInterval(injectPoller); injectPoller = null; }
 }
 
 function onNavigate() {
   removeInjected();
   pending = null;
-  stopWatchPoller();
+  stopInjectPoller();
   scheduleInject();
-  startWatchPoller();
+  startInjectPoller();
 }
 
 function applyAll(state) {
@@ -905,10 +951,10 @@ function applyAll(state) {
     pending = null;
     scheduleInject();
     // Cover the hard-reload case where yt-navigate-finish never fires
-    startWatchPoller();
+    startInjectPoller();
   } else {
     removeInjected();
-    stopWatchPoller();
+    stopInjectPoller();
   }
 }
 

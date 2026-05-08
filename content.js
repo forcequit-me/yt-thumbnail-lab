@@ -162,23 +162,97 @@ function neutralizeLinks(node) {
 }
 
 const AVATAR_SELECTOR =
-  "#avatar, #channel-thumbnail, ytd-channel-avatar, yt-avatar-shape, .yt-avatar-shape, #avatar-container, yt-img-shadow";
+  "[data-ytlab-avatar-root], [data-ytlab-avatar-visual], #avatar, #channel-thumbnail, ytd-channel-avatar, yt-avatar-shape, .yt-avatar-shape, #avatar-container, yt-img-shadow";
 
 // Outer avatar containers — used to capture/lock size before freezeLitElements
 // strips tag-targeted CSS. Includes a#avatar-link (search variant).
 const AVATAR_CONTAINER_SEL =
-  "#avatar, #channel-thumbnail, ytd-channel-avatar, yt-avatar-shape, .yt-avatar-shape, #avatar-container, yt-img-shadow, a#avatar-link";
+  "[data-ytlab-avatar-root], #avatar, #channel-thumbnail, ytd-channel-avatar, yt-avatar-shape, .yt-avatar-shape, #avatar-container, yt-img-shadow, a#avatar-link";
 
-function topLevelAvatarContainers(root) {
-  return Array.from(root.querySelectorAll(AVATAR_CONTAINER_SEL))
-    .filter((c) => c.closest(AVATAR_CONTAINER_SEL) === c);
+const AVATAR_VISUAL_SEL =
+  "yt-avatar-shape, .yt-avatar-shape, yt-img-shadow, #avatar";
+
+function avatarCandidateScore(el) {
+  let score = 0;
+  if (el.hasAttribute("data-ytlab-avatar-root")) score = 1000;
+  else if (el.matches("a#channel-thumbnail")) score = 900;
+  else if (el.matches("ytd-channel-avatar")) score = 850;
+  else if (el.matches("a#avatar-link")) score = 800;
+  else if (el.matches("yt-avatar-shape, .yt-avatar-shape")) score = 700;
+  else if (el.matches("#avatar-container")) score = 650;
+  else if (el.matches("#avatar")) score = 600;
+  else if (el.matches("yt-img-shadow")) score = 500;
+  if (score && el.querySelector("img")) score += 50;
+  if (el.closest("ytd-thumbnail, yt-thumbnail-view-model, [data-ytlab-thumb]")) score -= 1000;
+  return score;
 }
 
-function captureAvatarSizes(template) {
-  return topLevelAvatarContainers(template).map((el) => {
-    const cs = window.getComputedStyle(el);
-    return { width: cs.width, height: cs.height };
-  });
+function avatarCandidates(root) {
+  return Array.from(root.querySelectorAll(AVATAR_CONTAINER_SEL))
+    .map((el, index) => ({ el, index, score: avatarCandidateScore(el) }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map((entry) => entry.el);
+}
+
+function findAvatarTarget(root) {
+  return avatarCandidates(root)[0] || null;
+}
+
+function readPx(value) {
+  const n = parseFloat(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function measureBox(el) {
+  if (!el) return { width: 0, height: 0 };
+  const rect = el.getBoundingClientRect();
+  const cs = window.getComputedStyle(el);
+  return {
+    width: rect.width || readPx(cs.width),
+    height: rect.height || readPx(cs.height),
+  };
+}
+
+function defaultAvatarVisualSize(target) {
+  if (location.pathname === "/results" && target && target.matches("a#channel-thumbnail, a#avatar-link")) {
+    return 24;
+  }
+  return 36;
+}
+
+function normalizeAvatarVisualSize(size, fallback) {
+  if (!Number.isFinite(size) || size < 8) return fallback;
+  return Math.max(16, Math.min(36, Math.round(size)));
+}
+
+function normalizeAvatarBoxSize(size, fallback) {
+  if (!Number.isFinite(size) || size < 8) return fallback;
+  return Math.max(16, Math.min(64, Math.round(size)));
+}
+
+function findAvatarVisualElement(target) {
+  return (
+    target.querySelector("img.ytSpecAvatarShapeImage, img") ||
+    (target.matches(AVATAR_VISUAL_SEL) ? target : target.querySelector(AVATAR_VISUAL_SEL))
+  );
+}
+
+function captureAvatarLayout(template) {
+  const target = findAvatarTarget(template);
+  if (!target) return null;
+
+  const fallback = defaultAvatarVisualSize(target);
+  const outer = measureBox(target);
+  const visualEl = findAvatarVisualElement(target);
+  const visual = measureBox(visualEl || target);
+  const visualSize = normalizeAvatarVisualSize(Math.min(visual.width, visual.height), fallback);
+
+  return {
+    outerWidth: normalizeAvatarBoxSize(outer.width, visualSize),
+    outerHeight: normalizeAvatarBoxSize(outer.height, visualSize),
+    visualSize,
+  };
 }
 
 function captureRadii(template) {
@@ -208,20 +282,6 @@ function captureRadii(template) {
     }
   }
   return { card, thumb };
-}
-
-function applyAvatarSizes(clone, sizes) {
-  topLevelAvatarContainers(clone).forEach((el, i) => {
-    const s = sizes[i];
-    if (!s || s.width === "0px" || s.height === "0px") return;
-    el.style.setProperty("width", s.width, "important");
-    el.style.setProperty("height", s.height, "important");
-    el.style.setProperty("min-width", s.width, "important");
-    el.style.setProperty("min-height", s.height, "important");
-    el.style.setProperty("max-width", s.width, "important");
-    el.style.setProperty("max-height", s.height, "important");
-    el.style.setProperty("flex", "0 0 auto", "important");
-  });
 }
 
 /**
@@ -672,46 +732,102 @@ function markImageLoaded(img) {
   img.style.setProperty("visibility", "visible", "important");
 }
 
-function swapAvatar(node, dataUrl) {
-  if (!dataUrl) return;
-  // Swap every outermost avatar container. Don't force display:block on imgs
-  // — the previous "3 avatars" bug came from unhiding hidden duplicate imgs
-  // inside a single container, not from multiple containers. Just rewrite
-  // src on the first <img> per container; secondary hidden imgs stay hidden.
-  const containers = topLevelAvatarContainers(node);
-  containers.forEach((container) => {
-    // freezeLitElements replaces yt-avatar-shape with a plain div, dropping
-    // YouTube's tag-targeted border-radius. Force round + clip on the wrapper
-    // so non-square source images still render as a circle via object-fit.
-    container.style.setProperty("border-radius", "50%", "important");
-    container.style.setProperty("overflow", "hidden", "important");
-    container.style.setProperty("aspect-ratio", "1 / 1", "important");
-
-    const img = container.querySelector("img");
-    if (img) {
-      img.removeAttribute("srcset");
-      img.src = dataUrl;
-      img.style.setProperty("width", "100%", "important");
-      img.style.setProperty("height", "100%", "important");
-      img.style.setProperty("object-fit", "cover", "important");
-      img.style.setProperty("object-position", "center", "important");
-      img.style.setProperty("border-radius", "50%", "important");
-      markImageLoaded(img);
-    } else {
-      const newImg = document.createElement("img");
-      newImg.src = dataUrl;
-      newImg.className = "ytCoreImageHost ytSpecAvatarShapeImage ytCoreImageLoaded";
-      newImg.style.cssText =
-        "width:100%;height:100%;object-fit:cover;object-position:center;border-radius:50%;display:block;";
-      container.appendChild(newImg);
-    }
+function removeDuplicateAvatarTargets(node, target) {
+  avatarCandidates(node).forEach((candidate) => {
+    if (candidate === target || candidate.contains(target) || target.contains(candidate)) return;
+    candidate.remove();
   });
 }
 
-function applyAllSwaps(node, sim, capturedStyles) {
+function storedAvatarLayout(node, target) {
+  const fallback = defaultAvatarVisualSize(target);
+  const visualSize = normalizeAvatarVisualSize(readPx(node.getAttribute("data-ytlab-avatar-visual-size")), fallback);
+  return {
+    outerWidth: normalizeAvatarBoxSize(readPx(node.getAttribute("data-ytlab-avatar-outer-width")), visualSize),
+    outerHeight: normalizeAvatarBoxSize(readPx(node.getAttribute("data-ytlab-avatar-outer-height")), visualSize),
+    visualSize,
+  };
+}
+
+function writeAvatarLayout(node, layout) {
+  if (!layout) return;
+  node.setAttribute("data-ytlab-avatar-outer-width", String(layout.outerWidth));
+  node.setAttribute("data-ytlab-avatar-outer-height", String(layout.outerHeight));
+  node.setAttribute("data-ytlab-avatar-visual-size", String(layout.visualSize));
+}
+
+function styleBox(el, width, height) {
+  const w = `${width}px`;
+  const h = `${height}px`;
+  el.style.setProperty("width", w, "important");
+  el.style.setProperty("height", h, "important");
+  el.style.setProperty("min-width", w, "important");
+  el.style.setProperty("min-height", h, "important");
+  el.style.setProperty("max-width", w, "important");
+  el.style.setProperty("max-height", h, "important");
+  el.style.setProperty("box-sizing", "border-box", "important");
+}
+
+function swapAvatar(node, dataUrl, avatarLayout) {
+  const target = findAvatarTarget(node);
+  if (!target) return;
+
+  const layout = avatarLayout || storedAvatarLayout(node, target);
+  writeAvatarLayout(node, layout);
+  removeDuplicateAvatarTargets(node, target);
+
+  const existingImg = target.querySelector("img");
+  if (!existingImg && !dataUrl) return;
+
+  const img = existingImg || document.createElement("img");
+  if (dataUrl) {
+    img.removeAttribute("srcset");
+    img.src = dataUrl;
+  }
+  img.classList.add("ytCoreImageHost", "ytSpecAvatarShapeImage", "ytCoreImageLoaded");
+  img.alt = "";
+  img.style.setProperty("position", "absolute", "important");
+  img.style.setProperty("inset", "0", "important");
+  img.style.setProperty("width", "100%", "important");
+  img.style.setProperty("height", "100%", "important");
+  img.style.setProperty("object-fit", "cover", "important");
+  img.style.setProperty("object-position", "center", "important");
+  img.style.setProperty("border-radius", "50%", "important");
+  markImageLoaded(img);
+
+  const visual = document.createElement("span");
+  visual.setAttribute("data-ytlab-avatar-visual", "1");
+  visual.style.setProperty("position", "relative", "important");
+  visual.style.setProperty("display", "block", "important");
+  visual.style.setProperty("border-radius", "50%", "important");
+  visual.style.setProperty("clip-path", "circle(50%)", "important");
+  visual.style.setProperty("overflow", "hidden", "important");
+  visual.style.setProperty("background", "transparent", "important");
+  visual.style.setProperty("flex", "0 0 auto", "important");
+  styleBox(visual, layout.visualSize, layout.visualSize);
+
+  target.setAttribute("data-ytlab-avatar-root", "1");
+  target.style.setProperty("position", "relative", "important");
+  target.style.setProperty("display", "inline-flex", "important");
+  target.style.setProperty("align-items", "center", "important");
+  target.style.setProperty("justify-content", "center", "important");
+  target.style.setProperty("background", "transparent", "important");
+  target.style.setProperty("overflow", "visible", "important");
+  target.style.setProperty("clip-path", "none", "important");
+  target.style.setProperty("border-radius", "0", "important");
+  target.style.setProperty("padding", "0", "important");
+  target.style.setProperty("margin", "0", "important");
+  target.style.setProperty("flex", "0 0 auto", "important");
+  styleBox(target, layout.outerWidth, layout.outerHeight);
+
+  target.replaceChildren(visual);
+  visual.appendChild(img);
+}
+
+function applyAllSwaps(node, sim, capturedStyles, avatarLayout) {
   neutralizeFormattedStrings(node, capturedStyles);
   swapThumbnails(node, sim.thumbnail);
-  swapAvatar(node, sim.avatar);
+  swapAvatar(node, sim.avatar, avatarLayout);
   setTextAll(node, TITLE_SELECTORS, sim.title);
   setTextAll(node, CHANNEL_SELECTORS, sim.channel);
   setTextAll(node, META_SELECTORS, sim.meta);
@@ -770,11 +886,11 @@ function freezeLitElements(rootEl) {
 }
 
 function buildSimNode(sim, template) {
-  // Capture computed styles + avatar sizes from in-DOM template before cloning.
-  // freezeLitElements rewrites yt-img-shadow / yt-avatar-shape → div, dropping
-  // tag-targeted size CSS, so the clone needs sizes locked inline.
+  // Capture computed styles from the in-DOM template before cloning.
+  // Search keeps a rectangular avatar hitbox with a smaller circular image
+  // inside it, so capture both boxes before yt-* wrappers are frozen.
   const capturedStyles = captureFormattedStringStyles(template);
-  const capturedAvatars = captureAvatarSizes(template);
+  const avatarLayout = captureAvatarLayout(template);
   const radii = captureRadii(template);
 
   let clone = template.cloneNode(true);
@@ -782,10 +898,10 @@ function buildSimNode(sim, template) {
   clone.removeAttribute("id");
   clone.style.setProperty("--ytlab-card-radius", radii.card);
   clone.style.setProperty("--ytlab-thumb-radius", radii.thumb);
+  writeAvatarLayout(clone, avatarLayout);
 
   stripClutter(clone);
-  applyAvatarSizes(clone, capturedAvatars);
-  applyAllSwaps(clone, sim, capturedStyles);
+  applyAllSwaps(clone, sim, capturedStyles, avatarLayout);
   neutralizeLinks(clone);
 
   // Freeze yt-* (Lit) elements anywhere in the tree. Done after child swaps
@@ -932,16 +1048,17 @@ function isSupportedPath() {
 
 function startInjectPoller() {
   // Page content can lazy-load slowly on any of the 3 pages — watch sidebar
-  // is the worst offender (>30s after SPA nav from /results), but home grid
-  // and search results can also race the MutationObserver during SPA route
-  // changes. Keep polling until injection succeeds. Stop conditions: sim
-  // present, navigated to unsupported page, or sim disabled.
+  // is the worst (>30s after SPA nav from /results). Keep ticking the entire
+  // time the user is on a supported page with sim enabled. Don't stop when
+  // [data-ytlab-sim] appears — YouTube's renderer can wipe the clone right
+  // after insertion (Polymer/Lit re-render), and the poller is what brings
+  // it back. injectOnce short-circuits early when sim is already present, so
+  // continuous ticking is cheap.
   if (injectPoller) return;
   if (!isSupportedPath()) return;
   if (!currentState.sim || !currentState.sim.enabled) return;
   injectPoller = setInterval(() => {
     if (
-      document.querySelector(`[${SIM_ATTR}]`) ||
       !isSupportedPath() ||
       !currentState.sim ||
       !currentState.sim.enabled
@@ -951,7 +1068,7 @@ function startInjectPoller() {
       return;
     }
     injectOnce();
-  }, 1500);
+  }, 1000);
 }
 
 function stopInjectPoller() {

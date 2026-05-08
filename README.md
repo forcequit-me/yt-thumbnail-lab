@@ -1,33 +1,33 @@
 # YT Thumbnail Lab
 
-A browser extension that turns every YouTube thumbnail grayscale. Includes a built-in simulator for previewing your own thumbnail inside the real YouTube UI.
+A browser extension that grayscales every YouTube thumbnail and lets you preview your own thumbnail inside the real YouTube UI.
 
 ## Why
 
-Color does most of the attention-grabbing work in a thumbnail. Red arrows. Yellow highlights. Saturated skin tones. Take the color out and you see what's left: composition, typography, framing, contrast, subject. That part decides whether a thumbnail works.
+Color carries most of the pull on a thumbnail. Remove it and you see the underlying composition, typography, framing, and contrast.
 
 Three uses:
 
-- **Thumbnail analysis.** Auditing your channel or a competitor's is easier when color isn't covering weak composition.
-- **A calmer feed.** The homepage stops shouting. You can browse without the constant pull.
-- **Design study.** You learn faster from thumbnails without color than from an hour of scrolling.
+- **Audit your work.** Reviewing your channel or a competitor's gets clearer once color stops covering weak layouts.
+- **Browse calmer.** A grayscale feed scrolls without engagement-baiting.
+- **Study design.** You absorb thumbnail technique faster without the color noise.
 
 ## Features
 
-- **Thumbnail Simulator.** Upload your thumbnail and avatar, fill in title, channel, view count, duration, and description. The extension drops a fake video card into the home feed, search results, and watch-page sidebar so you can preview against live cards. Keyboard shortcut: `Alt+Shift+S`. Right-click any YouTube page for a toggle menu entry.
-- **Custom highlight color.** Pick any color for the outline around your simulated card.
-- **Position controls.** Move the simulated card up, down, left, or right per page (home, search, watch sidebar). Defaults to centered.
-- **Templates for A/B testing.** Save multiple named configurations (different thumbnails, titles, etc.), switch between them, and delete with confirmation.
+- **Thumbnail simulator.** Upload your thumbnail and avatar, fill in title, channel, view count, duration, and description. A fake video card appears in the home feed, search results, and watch-page sidebar, side by side with live cards. Shortcut: `Alt+Shift+S`. Right-click any YouTube page for the toggle.
+- **Custom highlight color.** Pick the outline color around your sim card.
+- **Reposition the sim card.** A prev / Recenter / next bar shifts the card between slots on home, search, and watch in one click. Limits clamp at ±5 from center.
+- **Templates for A/B testing.** Save named configurations (thumbnail, title, all the fields), swap between them, delete with confirmation.
 - **Quick-slot default.** Save your usual setup and reload it with one click.
-- **B&W mode.** Toggle every YouTube thumbnail to grayscale. Keyboard shortcut: `Alt+Shift+B`. Right-click any YouTube page for a toggle menu entry. Disabled by default.
-- Auto-saves as you type. Settings stay on your machine. No tracking. No network requests.
+- **B&W mode.** Grayscales every thumbnail on YouTube. Shortcut: `Alt+Shift+B`. Right-click toggle as well. Off by default.
+- Auto-saves as you type. Settings stay local. No tracking, no network calls.
 
 ## Installation
 
 The extension is not on the Chrome Web Store yet. You install it by loading the folder directly. Same steps in every Chromium browser: Chrome, Opera, Brave, Edge, Vivaldi, Arc.
 
 1. Download this repository as a ZIP from GitHub (green **Code** button, then **Download ZIP**), or `git clone` it.
-2. Extract the ZIP somewhere you won't move or delete. The folder with `manifest.json` inside is the one to point the browser at.
+2. Extract the ZIP somewhere you won't move or delete. The folder containing `manifest.json` is the one to point the browser at.
 3. Open your browser's extensions page:
    - Chrome, Brave, Vivaldi: `chrome://extensions`
    - Opera: `opera://extensions`
@@ -38,13 +38,11 @@ The extension is not on the Chrome Web Store yet. You install it by loading the 
 6. Select the extracted folder. Pick the one that contains `manifest.json`, not a parent or a subfolder.
 7. The icon shows up in your extensions list and toolbar. If you don't see it in the toolbar, click the puzzle-piece icon and pin it.
 
-To update later, replace your folder with the latest version and click the refresh icon on the extension's card.
-
-To remove, click **Remove** on the extension's card.
+To update later, replace your folder with the latest version and click the refresh icon on the extension's card. To remove, click **Remove** on the card.
 
 ## Usage
 
-### The Simulator
+### The simulator
 
 Open the popup. Click the **power button** to turn the simulator on. The settings panel expands.
 
@@ -52,7 +50,7 @@ Open the popup. Click the **power button** to turn the simulator on. The setting
 |---|---|
 | Highlight | Toggle the outline on/off. The color picker next to it sets the outline color. |
 | Thumbnail | PNG or JPG. |
-| Channel avatar | Optional. Replaces the avatar on the simulated card. |
+| Channel avatar | Optional. Replaces the avatar on the sim card. |
 | Title | Up to 100 characters. |
 | Channel | Up to 50 characters. |
 | Duration | e.g. `10:24` or `1:49:42`. |
@@ -65,44 +63,45 @@ Three ways to toggle the simulator:
 - Right-click any YouTube page and pick **YT Thumbnail Lab: Simulator off / Simulator on**.
 - Press `Alt+Shift+S` on any YouTube page.
 
-Clicking the simulated card does nothing — it is a preview, not a real video. The toolbar icon is dark when the simulator is off, green when on.
+Clicking the sim card does nothing. It's a preview, not a real video. The toolbar icon goes green when the simulator is on, dark when off.
 
 ### Position
 
-The simulated card lands in the middle slot by default on each page. Open **Position** in the popup to nudge it:
+Open **Position** in the popup. Three buttons: **<**, **Recenter**, **>**.
 
-- Three rows: **Home**, **Search**, **Watch** (sidebar).
-- Four arrows per row: ▲ ▼ ◀ ▶. The readout shows the current `x,y` offset from center.
-- On the home grid, ◀▶ moves one column and ▲▼ moves one row. On search and watch (linear lists), ◀▶ has no effect — only ▲▼.
-- **Center all** resets every page to `0,0`.
+- **<** moves the sim card one slot earlier on every page at once. On home that's one column left; on search and watch (vertical lists) it's one slot up.
+- **>** moves it one slot later. Right on home, down on search and watch.
+- **Recenter** puts every page back to the middle slot.
+
+One bar drives all three pages. The card stops at ±5 slots from center.
 
 ### Templates (A/B testing)
 
-Open **Templates** in the popup to save multiple named configurations:
+Open **Templates** in the popup to save named configurations:
 
 - Type a name and click **Save** to store the current card content (thumbnail, avatar, title, channel, duration, views/age, description), the highlight on/off toggle, and the position offsets.
 - Pick a name from the dropdown and click **Load** to swap to it.
 - **Delete** removes the selected template. Confirmation required.
 - Saving over an existing name asks for confirmation first.
 
-Templates **do not** carry the highlight color — that is a global preference (see below).
+Templates do not carry the highlight color. It's a global preference (see below).
 
 ### Quick-slot default
 
 At the bottom of the simulator panel:
 
-- **Save default.** Stores card content only (thumbnail, avatar, title, channel, duration, views/age, description). Excludes position, highlight toggle, and highlight color — so loading the default doesn't disturb your layout or color preference.
-- **Reset.** Restores those content fields. Position offsets and highlight color stay where you have them. Useful when you want a clean starting point to build a new template variant.
+- **Save default.** Stores card content only (thumbnail, avatar, title, channel, duration, views/age, description). Excludes position, highlight toggle, and highlight color, so loading the default leaves your layout and color choices alone.
+- **Reset.** Restores those content fields. Position offsets and highlight color stay put. Use it when starting a new template variant from scratch.
 
-If you haven't saved a default yet, **Reset** does nothing.
+If you haven't saved a default, **Reset** does nothing.
 
 ### Highlight color (global preference)
 
-The color picker on the Highlight row auto-saves whenever you change it. It is **not** stored inside templates or the default — pick it once and it stays across every load.
+The color picker on the Highlight row auto-saves on change. Templates and the default don't carry it. Pick once, it persists across loads.
 
 ### B&W mode
 
-The **B&W** slider in the popup turns every YouTube thumbnail grayscale. Independent from the simulator — you can use either or both. Three ways to toggle:
+The **B&W** slider in the popup grayscales every thumbnail on YouTube. It's independent from the simulator. Use either or both. Three toggles:
 
 - Click the popup's B&W slider.
 - Right-click any YouTube page and pick **YT Thumbnail Lab: B&W off / B&W on**.
@@ -110,11 +109,11 @@ The **B&W** slider in the popup turns every YouTube thumbnail grayscale. Indepen
 
 ## Troubleshooting
 
-**Thumbnails aren't grayscale, or the simulator card isn't showing up.** YouTube loads pages incrementally and sometimes serves the page from cache before the extension starts. Refresh the page once or twice. On the watch page, give the recommended-videos sidebar a few seconds to load before the card appears.
+**Thumbnails aren't grayscale, or the sim card isn't showing.** YouTube loads pages incrementally and sometimes serves cached content before the extension starts. Refresh once or twice. The watch sidebar lazy-loads, so give it a few seconds.
 
-**The toolbar icon doesn't change color when you toggle.** Restart the browser once after installing. Chrome can cache the icon until the extension's service worker fully starts.
+**The toolbar icon doesn't recolor on toggle.** Restart the browser once after install. Chrome caches the icon until the service worker boots.
 
-**Nothing works at all.** Confirm the extension is enabled on the extensions page and that you're signed into YouTube. The extension does not run on `music.youtube.com`, YouTube Kids, YouTube TV, or embedded players on other sites. That is intentional.
+**Nothing works at all.** Confirm the extension is enabled on the extensions page and you're signed into YouTube. The extension does not run on `music.youtube.com`, YouTube Kids, YouTube TV, or embedded players on other sites. By design.
 
 ## Permissions
 
@@ -125,7 +124,7 @@ The **B&W** slider in the popup turns every YouTube thumbnail grayscale. Indepen
 | `contextMenus` | Adds the right-click toggle. |
 | `*://*.youtube.com/*` | Run the extension on YouTube only. |
 
-No other domains. No network access. Nothing leaves your machine.
+Restricted to youtube.com. The extension makes no network calls; nothing leaves your machine.
 
 ## Browser support
 

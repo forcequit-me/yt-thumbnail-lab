@@ -181,6 +181,35 @@ function captureAvatarSizes(template) {
   });
 }
 
+function captureRadii(template) {
+  // Grab the card's outer radius (used for highlight ring) + the thumbnail
+  // container's radius (used for our img wrapper). Computed styles only valid
+  // while template is in DOM — so this must run before cloneNode.
+  let card = "12px";
+  const cardCs = window.getComputedStyle(template);
+  const cardR = cardCs.getPropertyValue("border-radius");
+  if (cardR && cardR !== "0px") card = cardR;
+
+  let thumb = "12px";
+  const thumbEl = template.querySelector(
+    "yt-thumbnail-view-model, yt-image, ytd-thumbnail, #thumbnail"
+  );
+  if (thumbEl) {
+    const cs = window.getComputedStyle(thumbEl);
+    const r = cs.getPropertyValue("border-radius");
+    if (r && r !== "0px") thumb = r;
+    // ytd-thumbnail / #thumbnail (Polymer) may carry radius on inner img wrapper
+    if (thumb === "0px" || !thumb) {
+      const inner = thumbEl.querySelector("img, yt-image");
+      if (inner) {
+        const ir = window.getComputedStyle(inner).getPropertyValue("border-radius");
+        if (ir && ir !== "0px") thumb = ir;
+      }
+    }
+  }
+  return { card, thumb };
+}
+
 function applyAvatarSizes(clone, sizes) {
   topLevelAvatarContainers(clone).forEach((el, i) => {
     const s = sizes[i];
@@ -266,19 +295,13 @@ function makeThumbImg(dataUrl) {
   return img;
 }
 
-function makeThumbWrapper(dataUrl, sourceEl) {
+function makeThumbWrapper(dataUrl) {
   const wrapper = document.createElement("div");
   wrapper.setAttribute("data-ytlab-thumb", "1");
-  // Mirror the original thumbnail's border-radius so corners stay rounded
-  // on homepage / watch sidebar (search already wraps in a rounded parent).
-  let radius = "12px";
-  if (sourceEl && sourceEl.isConnected) {
-    const cs = window.getComputedStyle(sourceEl);
-    const r = cs.getPropertyValue("border-radius");
-    if (r && r !== "0px") radius = r;
-  }
+  // Inherit thumb radius from clone-level CSS var captured from live template
+  // (set in buildSimNode via captureRadii). Matches each layout exactly.
   wrapper.style.cssText =
-    `position:relative;width:100%;height:100%;aspect-ratio:16/9;background:#000;overflow:hidden;display:block;border-radius:${radius};`;
+    "position:relative;width:100%;height:100%;aspect-ratio:16/9;background:#000;overflow:hidden;display:block;border-radius:var(--ytlab-thumb-radius, 12px);";
   wrapper.appendChild(makeThumbImg(dataUrl));
   return wrapper;
 }
@@ -752,10 +775,13 @@ function buildSimNode(sim, template) {
   // tag-targeted size CSS, so the clone needs sizes locked inline.
   const capturedStyles = captureFormattedStringStyles(template);
   const capturedAvatars = captureAvatarSizes(template);
+  const radii = captureRadii(template);
 
   let clone = template.cloneNode(true);
   clone.setAttribute(SIM_ATTR, "1");
   clone.removeAttribute("id");
+  clone.style.setProperty("--ytlab-card-radius", radii.card);
+  clone.style.setProperty("--ytlab-thumb-radius", radii.thumb);
 
   stripClutter(clone);
   applyAvatarSizes(clone, capturedAvatars);

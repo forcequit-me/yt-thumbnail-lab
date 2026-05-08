@@ -53,8 +53,9 @@ html.ytlab-active [data-ytlab-sim] yt-img-shadow img {
   pointer-events: none;
   position: absolute;
   inset: -6px;
-  border: 3.5px solid var(--ytlab-hl-color, #00ff88);
-  border-radius: 16px;
+  border: 2.5px solid var(--ytlab-hl-color, #00ff88);
+  /* Concentric with card: ring radius = card_radius + inset gap (6px). */
+  border-radius: calc(var(--ytlab-card-radius, 12px) + 6px);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--ytlab-hl-color, #00ff88) 30%, transparent),
               0 0 12px color-mix(in srgb, var(--ytlab-hl-color, #00ff88) 35%, transparent);
   z-index: 9999;

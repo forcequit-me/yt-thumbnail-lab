@@ -65,6 +65,13 @@ function removeInjected() {
   document.querySelectorAll(`[${SIM_ATTR}]`).forEach((n) => n.remove());
 }
 
+function existingSimLooksValid(node) {
+  if (!node || !hasRenderableBox(node)) return false;
+  if (location.pathname !== "/watch") return true;
+  const scope = findWatchSidebarScope();
+  return !!scope && scope.contains(node);
+}
+
 function findByAncestorItem(itemTag) {
   const items = Array.from(
     document.querySelectorAll(`${itemTag}:not([${SIM_ATTR}])`)
@@ -76,9 +83,26 @@ function findByAncestorItem(itemTag) {
 function findItemsInScope(scope, itemTag) {
   const items = Array.from(
     scope.querySelectorAll(`${itemTag}:not([${SIM_ATTR}])`)
-  );
+  ).filter(hasRenderableBox);
   if (items.length === 0) return null;
   return { itemTag, items };
+}
+
+function hasRenderableBox(el) {
+  if (!el || !el.isConnected) return false;
+  const rect = el.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+}
+
+function findWatchSidebarScope() {
+  const candidates = [
+    document.querySelector("#secondary ytd-watch-next-secondary-results-renderer"),
+    document.querySelector("ytd-watch-next-secondary-results-renderer"),
+    document.querySelector("#secondary #related"),
+    document.querySelector("#related"),
+    document.querySelector("#secondary"),
+  ];
+  return candidates.find((el) => el && hasRenderableBox(el)) || null;
 }
 
 function findContainerAndTemplate() {
@@ -94,16 +118,12 @@ function findContainerAndTemplate() {
     return t;
   }
   if (path === "/watch") {
-    const sidebar =
-      document.querySelector("#secondary") ||
-      document.querySelector("#related") ||
-      document.querySelector("ytd-watch-next-secondary-results-renderer");
-
-    const scope = sidebar || document;
+    const scope = findWatchSidebarScope();
+    if (!scope) return null;
 
     const itemTypes = [
-      "yt-lockup-view-model",
       "ytd-compact-video-renderer",
+      "yt-lockup-view-model",
       "ytd-rich-item-renderer",
       "ytd-video-renderer",
     ];
@@ -439,6 +459,22 @@ function findReadyThumbnailImage(node) {
   return thumbnailImages(node).find(hasUsableThumbnail) || null;
 }
 
+function hasDurationText(node) {
+  return Array.from(
+    node.querySelectorAll(
+      "ytd-thumbnail-overlay-time-status-renderer #text, ytd-thumbnail-overlay-time-status-renderer span, .ytBadgeShapeText"
+    )
+  ).some((el) => /^\s*\d{1,2}:\d{2}(:\d{2})?\s*$/.test(el.textContent || ""));
+}
+
+function isStandardSearchVideo(node) {
+  if (location.pathname !== "/results") return true;
+  if (!node.querySelector("a#video-title, h3 a#video-title")) return false;
+  if (!node.querySelector("ytd-channel-name, #channel-name")) return false;
+  if (node.querySelector("ytd-thumbnail-overlay-time-status-renderer[overlay-style='SHORTS']")) return false;
+  return hasDurationText(node);
+}
+
 function swapThumbnails(node, dataUrl) {
   if (!dataUrl) return;
 
@@ -542,6 +578,13 @@ function setTextAll(node, selectors, text, leafOnly = true) {
   }
 }
 
+function setSearchText(target, text) {
+  if (!target || !text) return;
+  target.textContent = text;
+  if (target.hasAttribute("title")) target.setAttribute("title", text);
+  if (target.hasAttribute("aria-label")) target.setAttribute("aria-label", text);
+}
+
 // View-model layout (homepage rich-grid, watch sidebar) uses Lit-style camelCase
 // classes like .ytContentMetadataViewModelMetadataRow. Polymer layout (search
 // ytd-video-renderer) uses ids like #video-title and #metadata-line. Both lists
@@ -602,6 +645,28 @@ const DESCRIPTION_SELECTORS = [
   "yt-formatted-string.metadata-snippet-text",
   "#description-text",
 ];
+
+function applySearchOverrides(node, sim) {
+  if (location.pathname !== "/results") return;
+
+  setSearchText(node.querySelector("a#video-title, #video-title, h3 a"), sim.title);
+  setSearchText(
+    node.querySelector(
+      "ytd-channel-name a, ytd-channel-name #text, #channel-name a, #channel-name #text, #byline a, #byline"
+    ),
+    sim.channel
+  );
+
+  if (sim.meta) {
+    node.querySelectorAll("#metadata-line").forEach((line) => {
+      line.innerHTML = "";
+      const span = document.createElement("span");
+      span.className = "inline-metadata-item style-scope ytd-video-meta-block";
+      span.textContent = sim.meta;
+      line.appendChild(span);
+    });
+  }
+}
 
 const STRIP_SELECTORS = [
   "ytd-video-summarization-search-renderer",
@@ -819,6 +884,20 @@ function removeDuplicateAvatarTargets(node, target) {
   });
 }
 
+function removeExtraAvatarPaint(node, target) {
+  node
+    .querySelectorAll("[data-ytlab-avatar-root], [data-ytlab-avatar-visual], img.ytSpecAvatarShapeImage")
+    .forEach((el) => {
+      if (el === target || target.contains(el) || el.contains(target)) return;
+      if (el.closest("[data-ytlab-thumb], ytd-thumbnail, yt-thumbnail-view-model")) return;
+      const wrapper =
+        el.closest(AVATAR_CONTAINER_SEL) ||
+        el.closest("a, ytd-channel-avatar, yt-avatar-shape, .yt-avatar-shape") ||
+        el;
+      if (wrapper && wrapper !== target && !wrapper.contains(target)) wrapper.remove();
+    });
+}
+
 function storedAvatarLayout(node, target) {
   const fallback = defaultAvatarVisualSize(target);
   const visualSize = normalizeAvatarVisualSize(readPx(node.getAttribute("data-ytlab-avatar-visual-size")), fallback);
@@ -902,9 +981,12 @@ function swapAvatar(node, dataUrl, avatarLayout) {
 
   target.replaceChildren(visual);
   visual.appendChild(img);
+  removeExtraAvatarPaint(node, target);
 }
 
 function applyAllSwaps(node, sim, capturedStyles, avatarLayout) {
+  sim = normalizeSim(sim);
+  if (!sim) return;
   neutralizeFormattedStrings(node, capturedStyles);
   swapThumbnails(node, sim.thumbnail);
   swapAvatar(node, sim.avatar, avatarLayout);
@@ -919,6 +1001,10 @@ function applyAllSwaps(node, sim, capturedStyles, avatarLayout) {
 
   // Catch-all for any structure my selectors missed
   aggressiveSwap(node, sim);
+
+  // Final search pass. Polymer search cards can restore their own text during
+  // connection, so the exact title/channel nodes get rewritten last.
+  applySearchOverrides(node, sim);
 }
 
 function applyHighlight(node, sim) {
@@ -998,6 +1084,7 @@ function buildSimNode(sim, template) {
   // so nested queries match real tag names. ytd-* (Polymer) tags stay so
   // tag-targeted layout CSS keeps working on homepage / search.
   clone = freezeLitElements(clone);
+  applyAllSwaps(clone, sim, null, avatarLayout);
 
   applyHighlight(clone, sim);
 
@@ -1014,8 +1101,13 @@ function injectOnce() {
     return;
   }
 
-  // Don't double-inject
-  if (document.querySelector(`[${SIM_ATTR}]`)) return;
+  // Don't double-inject, unless a stale/hidden sim was inserted before the
+  // current page's target container finished loading.
+  const existing = document.querySelector(`[${SIM_ATTR}]`);
+  if (existing) {
+    if (existingSimLooksValid(existing)) return;
+    existing.remove();
+  }
 
   const target = findContainerAndTemplate();
   if (!target) {
@@ -1036,6 +1128,7 @@ function injectOnce() {
   // still loading) produce a sim card with green outline and no content.
   const isPopulated = (el) => {
     if (!el) return false;
+    if (!isStandardSearchVideo(el)) return false;
     const titleText = (
       el.querySelector(".ytLockupMetadataViewModelTitle, a#video-title, h3 a") || el
     ).textContent || "";
@@ -1063,8 +1156,12 @@ function injectOnce() {
     }
   }
 
+  applyAllSwaps(clone, sim);
+  applyHighlight(clone, sim);
+  freezeLitElements(clone);
+
   // Delayed re-applications to fight Polymer re-renders
-  [50, 150, 400, 800, 1500, 3000].forEach((delay) => {
+  [0, 50, 150, 400, 800, 1500, 3000].forEach((delay) => {
     setScopedTimeout(() => {
       if (!clone.isConnected) return;
       applyAllSwaps(clone, sim);

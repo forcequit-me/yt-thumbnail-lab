@@ -554,8 +554,8 @@ html, body {
 
 .settings {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 14px;
+  left: 14px;
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -694,8 +694,8 @@ html, body {
 /* ── Help button ── */
 .help {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 14px;
+  right: 14px;
   width: 22px;
   height: 22px;
   border-radius: 50%;

@@ -121,6 +121,32 @@ html, body {
   cursor: default;
 }
 
+.startup-reset-block {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.startup-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--label);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.startup-check input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--glow);
+}
+
 /* ── Toggle switch ── */
 .switch {
   position: relative;

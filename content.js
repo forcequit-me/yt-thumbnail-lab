@@ -26,6 +26,14 @@ function getRouteKey() {
   return `${location.pathname}${location.search}`;
 }
 
+function getRoutePage() {
+  const p = location.pathname;
+  if (p === "/" || p.startsWith("/feed")) return "home";
+  if (p === "/results") return "search";
+  if (p === "/watch") return "watch";
+  return null;
+}
+
 let lastRouteKey = getRouteKey();
 
 function resetPositionCache() {
@@ -175,12 +183,8 @@ function computeInsertIndex(items, page, x, y, ts) {
   
   const currentPos = `${x},${y},${ts || 0}`;
   
-  if (baseIndexMap[page] === -1) {
+  if (baseIndexMap[page] === -1 || currentPos !== lastPos[page]) {
     baseIndexMap[page] = getViewportCenterIndex(items);
-  } else if (currentPos !== lastPos[page]) {
-    if (x === 0 && y === 0) {
-      baseIndexMap[page] = getViewportCenterIndex(items);
-    }
   }
   lastPos[page] = currentPos;
   
@@ -467,11 +471,21 @@ function hasDurationText(node) {
   ).some((el) => /^\s*\d{1,2}:\d{2}(:\d{2})?\s*$/.test(el.textContent || ""));
 }
 
+function hasShortsSignal(node) {
+  if (node.querySelector("a[href^='/shorts/'], a[href*='youtube.com/shorts/']")) return true;
+  if (node.querySelector("ytd-thumbnail-overlay-time-status-renderer[overlay-style='SHORTS']")) return true;
+  return Array.from(
+    node.querySelectorAll(
+      "ytd-thumbnail-overlay-time-status-renderer, yt-thumbnail-overlay-badge-view-model, ytd-badge-supported-renderer, badge-shape, .ytBadgeShapeText"
+    )
+  ).some((el) => /\bshorts\b/i.test(el.textContent || ""));
+}
+
 function isStandardSearchVideo(node) {
   if (location.pathname !== "/results") return true;
   if (!node.querySelector("a#video-title, h3 a#video-title")) return false;
   if (!node.querySelector("ytd-channel-name, #channel-name")) return false;
-  if (node.querySelector("ytd-thumbnail-overlay-time-status-renderer[overlay-style='SHORTS']")) return false;
+  if (hasShortsSignal(node)) return false;
   return hasDurationText(node);
 }
 
@@ -1126,17 +1140,19 @@ function injectOnce() {
 
   // A populated card has a real title + thumbnail. Empty placeholders (data
   // still loading) produce a sim card with green outline and no content.
-  const isPopulated = (el) => {
+  const hasCardContent = (el) => {
     if (!el) return false;
-    if (!isStandardSearchVideo(el)) return false;
     const titleText = (
       el.querySelector(".ytLockupMetadataViewModelTitle, a#video-title, h3 a") || el
     ).textContent || "";
     if (titleText.trim().length < 2) return false;
     return !!findReadyThumbnailImage(el);
   };
+  const isPositionAnchor = (el) => hasCardContent(el);
+  const isTemplateSource = (el) => hasCardContent(el) && isStandardSearchVideo(el);
 
-  const readyItems = target.items.filter((item) => !isAd(item) && isPopulated(item));
+  const positionItems = target.items.filter((item) => !isAd(item) && isPositionAnchor(item));
+  const readyItems = target.items.filter((item) => !isAd(item) && isTemplateSource(item));
   const template = readyItems[0] || null;
   // If nothing populated yet, signal failure so the retry chain / poller
   // tries again once the lazy-loaded data arrives.
@@ -1144,13 +1160,13 @@ function injectOnce() {
 
   const posMap = sim.position || {};
   const pos = posMap[target.page] || { x: 0, y: 0 };
-  const insertIdx = computeInsertIndex(readyItems, target.page, pos.x | 0, pos.y | 0, pos.ts || 0);
-  const anchor = readyItems[insertIdx];
+  const insertIdx = computeInsertIndex(positionItems, target.page, pos.x | 0, pos.y | 0, pos.ts || 0);
+  const anchor = positionItems[insertIdx];
   const clone = buildSimNode(sim, template);
   if (anchor) {
     anchor.parentNode.insertBefore(clone, anchor);
   } else {
-    const lastItem = readyItems[readyItems.length - 1];
+    const lastItem = positionItems[positionItems.length - 1];
     if (lastItem && lastItem.parentNode) {
       lastItem.parentNode.appendChild(clone);
     }
@@ -1221,8 +1237,7 @@ function stopObserver() {
 let injectPoller = null;
 
 function isSupportedPath() {
-  const p = location.pathname;
-  return p === "/" || p.startsWith("/feed") || p === "/results" || p === "/watch";
+  return !!getRoutePage();
 }
 
 function startInjectPoller() {
@@ -1290,12 +1305,32 @@ function beginFreshInject() {
   startInjectPoller();
 }
 
+function resetStoredPositionForPage(page) {
+  if (!page || !currentState || !currentState.sim) return;
+  const ts = Date.now();
+  currentState = {
+    ...currentState,
+    sim: {
+      ...currentState.sim,
+      position: {
+        ...((currentState.sim && currentState.sim.position) || {}),
+        [page]: { x: 0, y: 0, ts },
+      },
+    },
+  };
+  chrome.runtime.sendMessage(
+    { type: "ytlab:resetPosition", page },
+    () => void chrome.runtime.lastError
+  );
+}
+
 function onNavigate() {
   const key = getRouteKey();
   const routeChanged = key !== lastRouteKey;
   if (key !== lastRouteKey) {
     lastRouteKey = key;
     resetPositionCache();
+    resetStoredPositionForPage(getRoutePage());
   }
   if (
     routeChanged ||

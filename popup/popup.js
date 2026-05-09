@@ -7,6 +7,8 @@ const helpClose = document.getElementById("help-close");
 
 // B&W (grayscale) toggle — global active state
 const bwEnabled = document.getElementById("bw-enabled");
+const resetSimOnStartup = document.getElementById("reset-sim-on-startup");
+const resetBwOnStartup = document.getElementById("reset-bw-on-startup");
 
 // Simulator elements
 const simPanel = document.getElementById("sim-panel");
@@ -66,6 +68,8 @@ function renderPowerVisual(simEnabled) {
 function render(state) {
   if (!state) return;
   bwEnabled.checked = !!state.active;
+  resetSimOnStartup.checked = !!state.settings?.autoOffSimOnStartup;
+  resetBwOnStartup.checked = !!state.settings?.autoOffBwOnStartup;
 
   const sim = state.sim || {};
   simPanel.hidden = !sim.enabled;
@@ -198,6 +202,20 @@ btn.addEventListener("click", () => {
 bwEnabled.addEventListener("change", () => {
   chrome.runtime.sendMessage(
     { type: "ytlab:setActive", active: bwEnabled.checked },
+    (state) => state && render(state)
+  );
+});
+
+resetSimOnStartup.addEventListener("change", () => {
+  chrome.runtime.sendMessage(
+    { type: "ytlab:setStartupReset", which: "sim", value: resetSimOnStartup.checked },
+    (state) => state && render(state)
+  );
+});
+
+resetBwOnStartup.addEventListener("change", () => {
+  chrome.runtime.sendMessage(
+    { type: "ytlab:setStartupReset", which: "bw", value: resetBwOnStartup.checked },
     (state) => state && render(state)
   );
 });

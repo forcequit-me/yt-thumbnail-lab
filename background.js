@@ -21,6 +21,10 @@ const DEFAULT_SIM = {
 const DEFAULT_STATE = {
   active: false,
   sim: DEFAULT_SIM,
+  settings: {
+    autoOffSimOnStartup: false,
+    autoOffBwOnStartup: false,
+  },
 };
 
 const MENU_ID = "ytlab-toggle";
@@ -91,11 +95,19 @@ function mergeSim(stored) {
   };
 }
 
+function mergeSettings(stored) {
+  return {
+    ...DEFAULT_STATE.settings,
+    ...(stored || {}),
+  };
+}
+
 async function getState() {
   const stored = await chrome.storage.local.get(DEFAULT_STATE);
   return {
     active: !!stored.active,
     sim: mergeSim(stored.sim),
+    settings: mergeSettings(stored.settings),
   };
 }
 
@@ -119,6 +131,29 @@ async function setSim(sim) {
     Object.prototype.hasOwnProperty.call(sim, "avatar");
   if (assetChanged) await broadcastState(state);
   else await broadcastSimPatch(sim);
+}
+
+async function resetPosition(page) {
+  if (!Object.prototype.hasOwnProperty.call(DEFAULT_POSITION, page)) return;
+  const current = await getState();
+  const merged = mergeSim({
+    ...current.sim,
+    position: {
+      ...current.sim.position,
+      [page]: { ...DEFAULT_POSITION[page], ts: Date.now() },
+    },
+  });
+  await chrome.storage.local.set({ sim: merged });
+  const state = await getState();
+  await broadcastState(state);
+}
+
+async function setStartupReset(which, value) {
+  const state = await getState();
+  const settings = { ...state.settings };
+  if (which === "sim") settings.autoOffSimOnStartup = !!value;
+  if (which === "bw") settings.autoOffBwOnStartup = !!value;
+  await chrome.storage.local.set({ settings });
 }
 
 // Fields stored in Save default — card content only. Excludes: enabled,
@@ -219,7 +254,19 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  const state = await getState();
+  let state = await getState();
+  const updates = {};
+  if (state.settings.autoOffBwOnStartup && state.active) {
+    updates.active = false;
+  }
+  if (state.settings.autoOffSimOnStartup && state.sim.enabled) {
+    updates.sim = mergeSim({ ...state.sim, enabled: false });
+  }
+  if (Object.keys(updates).length > 0) {
+    await chrome.storage.local.set(updates);
+    state = await getState();
+    await broadcastState(state);
+  }
   await updateIcon(state.sim.enabled);
   await ensureMenu();
 });
@@ -250,6 +297,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg.type === "ytlab:setSim") {
     setSim(msg.sim || {}).then(async () => sendResponse(await getState()));
+    return true;
+  }
+  if (msg.type === "ytlab:resetPosition") {
+    resetPosition(msg.page).then(async () => sendResponse(await getState()));
+    return true;
+  }
+  if (msg.type === "ytlab:setStartupReset") {
+    setStartupReset(msg.which, !!msg.value).then(async () => sendResponse(await getState()));
     return true;
   }
   if (msg.type === "ytlab:saveDefault") {

@@ -34,6 +34,18 @@
         </label>
       </div>
 
+      <div class="startup-reset-block">
+        <span class="sim-label">On browser restart</span>
+        <label class="startup-check">
+          <input type="checkbox" id="reset-sim-on-startup" />
+          <span>Simulator off</span>
+        </label>
+        <label class="startup-check">
+          <input type="checkbox" id="reset-bw-on-startup" />
+          <span>B&amp;W off</span>
+        </label>
+      </div>
+
       <!-- Collapsible simulator settings -->
       <div id="sim-panel" class="sim-panel" hidden>
         <!-- Highlight Settings -->
@@ -190,6 +202,7 @@
       <ul class="help-list">
         <li><span class="help-tag">B&amp;W</span><span class="help-desc"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></span></li>
         <li><span class="help-tag">Simulator</span><span class="help-desc"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></span></li>
+        <li><span class="help-tag">Restart</span><span class="help-desc">Optional auto-off for Simulator and B&amp;W when the browser starts</span></li>
         <li><span class="help-tag">Highlight</span><span class="help-desc">Color outline around the simulated card</span></li>
         <li><span class="help-tag">Reposition</span><span class="help-desc">Nudge the sim card left or right; Recenter resets to the default slot and scrolls it into view</span></li>
         <li><span class="help-tag">Right-click</span><span class="help-desc">Quick toggle from any YouTube page</span></li>

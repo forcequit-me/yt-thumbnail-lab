@@ -71,7 +71,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 17px 14px 14px;
+  padding: 23px 14px 14px;
 }
 
 /* ── Power button ── */
@@ -554,7 +554,7 @@ html, body {
 
 .settings {
   position: absolute;
-  top: 14px;
+  top: 20px;
   left: 14px;
   width: 22px;
   height: 22px;
@@ -592,7 +592,7 @@ html, body {
   top: 8px;
   left: 8px;
   right: 8px;
-  padding: 16px 14px 12px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--panel-bg);
@@ -607,23 +607,21 @@ html, body {
 
 .settings-menu-header {
   display: flex;
-  position: relative;
   align-items: center;
   justify-content: center;
-  min-height: 26px;
+  min-height: 22px;
 }
 
 .settings-close {
   position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  width: 26px;
-  height: 26px;
+  top: 12px;
+  left: 6px;
+  width: 22px;
+  height: 22px;
   background: var(--input-bg);
   border: 1px solid var(--text);
   color: var(--text);
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -694,7 +692,7 @@ html, body {
 /* ── Help button ── */
 .help {
   position: absolute;
-  top: 14px;
+  top: 20px;
   right: 14px;
   width: 22px;
   height: 22px;
@@ -736,7 +734,7 @@ html, body {
   top: 8px;
   left: 8px;
   right: 8px;
-  padding: 16px 14px 14px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--panel-bg);
@@ -754,23 +752,21 @@ html, body {
 
 .help-header {
   display: flex;
-  position: relative;
   align-items: center;
   justify-content: center;
-  min-height: 26px;
+  min-height: 22px;
 }
 
 .help-close {
   position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  width: 26px;
-  height: 26px;
+  top: 12px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
   background: var(--input-bg);
   border: 1px solid var(--text);
   color: var(--text);
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -817,7 +813,7 @@ html, body {
 
 .help-list {
   list-style: none;
-  margin: 0 auto;
+  margin: 8px auto;
   padding: 0;
   display: flex;
   flex-direction: column;

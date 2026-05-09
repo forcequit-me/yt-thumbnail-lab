@@ -11,7 +11,7 @@
   --panel-bg: #181818;
   --input-bg: #111;
   --kbd-bg: #222;
-  --help-bg: #0f0f0fee;
+  --help-bg: #181818f2;
   --power-on-bg: #ffffff;
   /* Shape tokens */
   --radius: 8px;
@@ -40,7 +40,7 @@
     --panel-bg: #f5f5f5;
     --input-bg: #fff;
     --kbd-bg: #e8e8e8;
-    --help-bg: #ffffffee;
+    --help-bg: #f5f5f5f2;
     --power-on-bg: #111;
     --hover-border: rgba(0, 204, 106, 0.5);
     --hover-bg: rgba(0, 204, 106, 0.06);
@@ -119,32 +119,6 @@ html, body {
   letter-spacing: 0.3px;
   color: var(--text);
   cursor: default;
-}
-
-.startup-reset-block {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 6px;
-  padding: 8px 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-
-.startup-check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--label);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.startup-check input {
-  width: 14px;
-  height: 14px;
-  margin: 0;
-  accent-color: var(--glow);
 }
 
 /* ── Toggle switch ── */
@@ -578,6 +552,145 @@ html, body {
   filter: brightness(0.85);
 }
 
+.settings {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9;
+}
+
+.settings:hover,
+.settings[aria-expanded="true"] {
+  color: var(--glow);
+  border-color: var(--glow);
+  background: var(--hover-bg);
+}
+
+.settings:focus-visible {
+  outline: none;
+  color: var(--glow);
+  border-color: var(--glow);
+  box-shadow: var(--focus-ring);
+}
+
+.settings:active { filter: brightness(0.85); }
+
+.settings-menu {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  padding: 16px 14px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-bg);
+  color: var(--text);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 12;
+  display: grid;
+  gap: 10px;
+}
+
+.settings-menu[hidden] { display: none; }
+
+.settings-menu-header {
+  display: flex;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+}
+
+.settings-close {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  background: var(--input-bg);
+  border: 1px solid var(--text);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.settings-close:hover {
+  color: var(--glow);
+  border-color: var(--glow);
+  background: var(--hover-bg);
+}
+
+.settings-close:focus-visible {
+  outline: none;
+  color: var(--glow);
+  border-color: var(--glow);
+  box-shadow: var(--focus-ring);
+}
+
+.settings-close:active {
+  filter: brightness(0.85);
+}
+
+.settings-menu-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--glow);
+}
+
+.settings-toggle-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.settings-check {
+  display: grid;
+  grid-template-columns: 1fr 36px;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.settings-check .switch {
+  justify-self: end;
+}
+
+.settings-check + .settings-check {
+  border-left: 1px solid var(--border);
+  padding-left: 16px;
+}
+
+.settings-check:hover { color: var(--glow); }
+
 /* ── Help button ── */
 .help {
   position: absolute;
@@ -620,33 +733,38 @@ html, body {
 /* ── Help panel ── */
 .help-panel {
   position: absolute;
-  inset: 0;
-  background: var(--help-bg);
-  backdrop-filter: blur(4px);
-  padding: 16px 16px 20px;
-  font-size: 12px;
-  line-height: 1.5;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  padding: 16px 14px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-bg);
   color: var(--text);
-  z-index: 10;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 12;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .help-panel[hidden] { display: none; }
 
-/* When help is open, hide stack so body collapses to help-panel content height — no scroll */
-body.help-open .stack { display: none; }
-body.help-open .help-panel { position: relative; }
-
 .help-header {
   display: flex;
+  position: relative;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: center;
+  min-height: 26px;
 }
 
 .help-close {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
   width: 26px;
   height: 26px;
   background: var(--input-bg);
@@ -699,18 +817,20 @@ body.help-open .help-panel { position: relative; }
 
 .help-list {
   list-style: none;
-  margin: 6px 0;
+  margin: 0 auto;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 8px;
+  width: max-content;
+  max-width: 100%;
 }
 
 .help-list li {
   font-size: 12px;
   display: grid;
-  grid-template-columns: 96px 1fr;
-  align-items: start;
+  grid-template-columns: 96px auto;
+  align-items: center;
   gap: 8px;
 }
 

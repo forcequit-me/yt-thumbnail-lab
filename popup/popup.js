@@ -4,6 +4,8 @@ const btn = document.getElementById("toggle");
 const helpBtn = document.getElementById("help-btn");
 const helpPanel = document.getElementById("help-panel");
 const helpClose = document.getElementById("help-close");
+const settingsBtn = document.getElementById("settings-btn");
+const settingsMenu = document.getElementById("settings-menu");
 
 // B&W (grayscale) toggle — global active state
 const bwEnabled = document.getElementById("bw-enabled");
@@ -422,14 +424,56 @@ tplDelete.addEventListener("click", () => {
 });
 
 /* ── Help panel ── */
-helpBtn.addEventListener("click", () => {
-  helpPanel.hidden = false;
-  document.body.classList.add("help-open");
+function setSettingsOpen(open) {
+  settingsMenu.hidden = !open;
+  settingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+settingsBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  setSettingsOpen(settingsMenu.hidden);
 });
 
-helpClose.addEventListener("click", () => {
-  helpPanel.hidden = true;
-  document.body.classList.remove("help-open");
+settingsMenu.addEventListener("click", (e) => {
+  e.stopPropagation();
+});
+
+document.getElementById("settings-close").addEventListener("click", (e) => {
+  e.stopPropagation();
+  setSettingsOpen(false);
+  settingsBtn.focus();
+});
+
+document.addEventListener("click", () => {
+  if (!settingsMenu.hidden) setSettingsOpen(false);
+  if (!helpPanel.hidden) setHelpOpen(false);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (!settingsMenu.hidden) setSettingsOpen(false);
+  else if (!helpPanel.hidden) setHelpOpen(false);
+});
+
+function setHelpOpen(open) {
+  helpPanel.hidden = !open;
+  helpBtn.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+helpPanel.addEventListener("click", (e) => {
+  e.stopPropagation();
+});
+
+helpBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  setSettingsOpen(false);
+  setHelpOpen(helpPanel.hidden);
+});
+
+helpClose.addEventListener("click", (e) => {
+  e.stopPropagation();
+  setHelpOpen(false);
+  helpBtn.focus();
 });
 
 /* ── External state sync (keyboard shortcut / right-click sim toggle) ── */

@@ -107,9 +107,24 @@ The **B&W** slider in the popup grayscales every thumbnail on YouTube. It's inde
 - Right-click any YouTube page and pick **YT Thumbnail Lab: B&W off / B&W on**.
 - Press `Alt+Shift+B` on any YouTube page.
 
+### Preferences (auto off on restart)
+
+The gear icon in the top-left of the popup opens preferences. Two toggles, both off by default:
+
+- **Simulator.** Turns the simulator off automatically when the browser starts.
+- **B&W.** Turns B&W off automatically when the browser starts.
+
+Useful if you only want these on during deliberate sessions. Close with the **×** in the corner or by pressing `Esc`.
+
+## One tab at a time
+
+The extension is built around a single active YouTube tab. Running the simulator or B&W on multiple YouTube tabs at once can cause the sim card to render inconsistently, duplicate, or fail to update when you switch between them. Keep YouTube open in one tab while you're using the extension. If you need a second tab, toggle the simulator off in the first one first.
+
 ## Troubleshooting
 
 **Thumbnails aren't grayscale, or the sim card isn't showing.** YouTube loads pages incrementally and sometimes serves cached content before the extension starts. Refresh once or twice. The watch sidebar lazy-loads, so give it a few seconds.
+
+**Sim card looks wrong or won't update across tabs.** See [One tab at a time](#one-tab-at-a-time). Close extra YouTube tabs and refresh the one you're using.
 
 **The toolbar icon doesn't recolor on toggle.** Restart the browser once after install. Chrome caches the icon until the service worker boots.
 

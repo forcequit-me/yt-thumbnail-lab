@@ -6,7 +6,45 @@
   </head>
   <body>
     <div class="stack">
-      <button id="toggle" class="power" aria-label="Toggle Simulator">
+      <button
+        id="settings-btn"
+        class="settings"
+        type="button"
+        aria-label="Settings"
+        aria-expanded="false"
+        aria-controls="settings-menu"
+        title="Preferences"
+      >
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path d="M12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.2a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 0 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.2a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 0 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3 1.6 1.6 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.2a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 0 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8 1.6 1.6 0 0 0 1.5 1h.2a2 2 0 0 1 0 4h-.2a1.6 1.6 0 0 0-1.5 1Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div id="settings-menu" class="settings-menu" hidden>
+        <div class="settings-menu-header">
+          <h3 class="settings-menu-title">Auto off on restart</h3>
+          <button id="settings-close" class="settings-close" type="button" aria-label="Close" title="Close">×</button>
+        </div>
+        <div class="settings-toggle-row">
+          <label class="settings-check" title="Turn Simulator off when the browser starts">
+            <span>Simulator</span>
+            <span class="switch">
+              <input type="checkbox" id="reset-sim-on-startup" />
+              <span class="slider"></span>
+            </span>
+          </label>
+          <label class="settings-check" title="Turn B&amp;W off when the browser starts">
+            <span>B&amp;W</span>
+            <span class="switch">
+              <input type="checkbox" id="reset-bw-on-startup" />
+              <span class="slider"></span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <button id="toggle" class="power" aria-label="Toggle Simulator" title="Toggle Simulator">
         <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
           <path
             d="M12 3v10"
@@ -28,21 +66,9 @@
       <!-- B&W toggle slider (was main feature, now secondary) -->
       <div class="sim-toggle-row">
         <span class="sim-label">Black &amp; White</span>
-        <label class="switch" id="bw-switch-label">
+        <label class="switch" id="bw-switch-label" title="Toggle Black &amp; White">
           <input type="checkbox" id="bw-enabled" />
           <span class="slider"></span>
-        </label>
-      </div>
-
-      <div class="startup-reset-block">
-        <span class="sim-label">On browser restart</span>
-        <label class="startup-check">
-          <input type="checkbox" id="reset-sim-on-startup" />
-          <span>Simulator off</span>
-        </label>
-        <label class="startup-check">
-          <input type="checkbox" id="reset-bw-on-startup" />
-          <span>B&amp;W off</span>
         </label>
       </div>
 
@@ -64,9 +90,9 @@
         <div class="sim-position-block">
           <span class="sim-label">Reposition</span>
           <div class="pos-pad">
-            <button type="button" class="pos-btn" data-dir="prev" aria-label="Previous">&lt;</button>
-            <button type="button" class="pos-btn" data-dir="center" aria-label="Recenter">Recenter</button>
-            <button type="button" class="pos-btn" data-dir="next" aria-label="Next">&gt;</button>
+            <button type="button" class="pos-btn" data-dir="prev" aria-label="Previous" title="Move sim up/left">&lt;</button>
+            <button type="button" class="pos-btn" data-dir="center" aria-label="Recenter" title="Recenter sim in view">Recenter</button>
+            <button type="button" class="pos-btn" data-dir="next" aria-label="Next" title="Move sim down/right">&gt;</button>
           </div>
         </div>
 
@@ -161,12 +187,12 @@
             <select id="tpl-select" class="tpl-select">
               <option value="">— select —</option>
             </select>
-            <button id="tpl-load" class="sim-mini" type="button">Load</button>
-            <button id="tpl-delete" class="sim-mini" type="button">Delete</button>
+            <button id="tpl-load" class="sim-mini" type="button" title="Load selected template">Load</button>
+            <button id="tpl-delete" class="sim-mini" type="button" title="Delete selected template">Delete</button>
           </div>
           <div class="tpl-row">
             <input id="tpl-name" type="text" maxlength="40" placeholder="Template name" class="tpl-name" />
-            <button id="tpl-save" class="sim-mini" type="button">Save</button>
+            <button id="tpl-save" class="sim-mini" type="button" title="Save current sim as template">Save</button>
           </div>
         </div>
 
@@ -186,6 +212,7 @@
         class="help"
         type="button"
         aria-label="About YT Thumbnail Lab"
+        title="About YT Thumbnail Lab"
       >
         ?
       </button>
@@ -194,7 +221,7 @@
     <div id="help-panel" class="help-panel" hidden>
       <div class="help-header">
         <h3 class="help-title">YT Thumbnail Lab</h3>
-        <button id="help-close" class="help-close" aria-label="Close">×</button>
+        <button id="help-close" class="help-close" aria-label="Close" title="Close">×</button>
       </div>
       <p class="help-line">
         Power button toggles the Simulator. Black &amp; White slider turns every YouTube thumbnail to grayscale.
@@ -202,14 +229,13 @@
       <ul class="help-list">
         <li><span class="help-tag">B&amp;W</span><span class="help-desc"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></span></li>
         <li><span class="help-tag">Simulator</span><span class="help-desc"><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></span></li>
-        <li><span class="help-tag">Restart</span><span class="help-desc">Optional auto-off for Simulator and B&amp;W when the browser starts</span></li>
-        <li><span class="help-tag">Highlight</span><span class="help-desc">Color outline around the simulated card</span></li>
-        <li><span class="help-tag">Reposition</span><span class="help-desc">Nudge the sim card left or right; Recenter resets to the default slot and scrolls it into view</span></li>
-        <li><span class="help-tag">Right-click</span><span class="help-desc">Quick toggle from any YouTube page</span></li>
-        <li><span class="help-tag">Templates</span><span class="help-desc">Save sim configs for A/B testing</span></li>
-        <li><span class="help-tag">Default</span><span class="help-desc">One-click save/reset of your usual sim setup</span></li>
-        <li><span class="help-tag">Description</span><span class="help-desc">Only renders on search results pages</span></li>
-        <li><span class="help-tag">Auto-save</span><span class="help-desc">All sim fields save as you type</span></li>
+        <li><span class="help-tag">Highlight</span><span class="help-desc">Outline around sim card</span></li>
+        <li><span class="help-tag">Reposition</span><span class="help-desc">Shift slot · recenter</span></li>
+        <li><span class="help-tag">Right-click</span><span class="help-desc">Quick toggle on YouTube</span></li>
+        <li><span class="help-tag">Templates</span><span class="help-desc">Configs for A/B testing</span></li>
+        <li><span class="help-tag">Default</span><span class="help-desc">Save/reset usual setup</span></li>
+        <li><span class="help-tag">Description</span><span class="help-desc">Search results only</span></li>
+        <li><span class="help-tag">Auto-save</span><span class="help-desc">Saves as you type</span></li>
       </ul>
       <div class="help-footer">
         <span class="help-byline">Built by Force Quit</span>

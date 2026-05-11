@@ -156,6 +156,7 @@ function findContainerAndTemplate() {
 
 let baseIndexMap = { home: -1, search: -1, watch: -1 };
 let lastPos = { home: "", search: "", watch: "" };
+let forceRecenter = { home: false, search: false, watch: false };
 
 function getViewportCenterIndex(items) {
   const vCenter = window.innerHeight / 2;
@@ -174,20 +175,28 @@ function getViewportCenterIndex(items) {
   return closestIdx;
 }
 
-// Compute insertion index: center of items + position offset.
+// Compute insertion index: stable base anchor + position offset.
+// Base re-derives only on: first inject, route change (forceRecenter), or
+// explicit center press (x=0,y=0). Arrow ± clicks keep base stable so each
+// press shifts idx by exactly the y delta — predictable across scroll.
 // Home is a CSS grid (multiple cols) — derive cols from bounding rect tops.
 // Search/watch are linear lists; x is ignored.
 function computeInsertIndex(items, page, x, y, ts) {
   const len = items.length;
   if (len === 0) return 0;
-  
+
   const currentPos = `${x},${y},${ts || 0}`;
-  
-  if (baseIndexMap[page] === -1 || currentPos !== lastPos[page]) {
+  const isExplicitCenter = x === 0 && y === 0;
+  const positionChanged = currentPos !== lastPos[page];
+
+  if (forceRecenter[page]) {
+    baseIndexMap[page] = Math.min(2, len - 1);
+    forceRecenter[page] = false;
+  } else if (baseIndexMap[page] === -1 || (isExplicitCenter && positionChanged)) {
     baseIndexMap[page] = getViewportCenterIndex(items);
   }
   lastPos[page] = currentPos;
-  
+
   const center = baseIndexMap[page];
   
   if (page === "home") {
@@ -341,6 +350,19 @@ function captureRadii(template) {
     }
   }
   return { card, thumb };
+}
+
+// Capture the template card's outer box spacing while it's still in DOM.
+// Locking these inline on the clone keeps the inter-card gap consistent on
+// search results where sibling-combinator CSS doesn't always match the clone.
+function captureCardSpacing(template) {
+  const cs = window.getComputedStyle(template);
+  return {
+    marginTop: cs.marginTop,
+    marginBottom: cs.marginBottom,
+    paddingTop: cs.paddingTop,
+    paddingBottom: cs.paddingBottom,
+  };
 }
 
 /**
@@ -929,6 +951,14 @@ function writeAvatarLayout(node, layout) {
   node.setAttribute("data-ytlab-avatar-visual-size", String(layout.visualSize));
 }
 
+function writeCardSpacing(node, spacing) {
+  if (!spacing) return;
+  node.style.setProperty("margin-top", spacing.marginTop, "important");
+  node.style.setProperty("margin-bottom", spacing.marginBottom, "important");
+  node.style.setProperty("padding-top", spacing.paddingTop, "important");
+  node.style.setProperty("padding-bottom", spacing.paddingBottom, "important");
+}
+
 function styleBox(el, width, height) {
   const w = `${width}px`;
   const h = `${height}px`;
@@ -1082,6 +1112,7 @@ function buildSimNode(sim, template) {
   const capturedStyles = captureFormattedStringStyles(template);
   const avatarLayout = captureAvatarLayout(template);
   const radii = captureRadii(template);
+  const spacing = captureCardSpacing(template);
 
   let clone = template.cloneNode(true);
   clone.setAttribute(SIM_ATTR, "1");
@@ -1100,6 +1131,7 @@ function buildSimNode(sim, template) {
   clone = freezeLitElements(clone);
   applyAllSwaps(clone, sim, null, avatarLayout);
 
+  writeCardSpacing(clone, spacing);
   applyHighlight(clone, sim);
 
   return clone;
@@ -1148,7 +1180,8 @@ function injectOnce() {
     if (titleText.trim().length < 2) return false;
     return !!findReadyThumbnailImage(el);
   };
-  const isPositionAnchor = (el) => hasCardContent(el);
+  const isShortsOnSearch = (el) => target.page === "search" && hasShortsSignal(el);
+  const isPositionAnchor = (el) => hasCardContent(el) && !isShortsOnSearch(el);
   const isTemplateSource = (el) => hasCardContent(el) && isStandardSearchVideo(el);
 
   const positionItems = target.items.filter((item) => !isAd(item) && isPositionAnchor(item));
@@ -1330,7 +1363,9 @@ function onNavigate() {
   if (key !== lastRouteKey) {
     lastRouteKey = key;
     resetPositionCache();
-    resetStoredPositionForPage(getRoutePage());
+    const page = getRoutePage();
+    if (page) forceRecenter[page] = true;
+    resetStoredPositionForPage(page);
   }
   if (
     routeChanged ||

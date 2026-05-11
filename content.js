@@ -88,6 +88,38 @@ function findByAncestorItem(itemTag) {
   return { itemTag, items };
 }
 
+// Search results may render ytd-video-renderer inside shelves (radio, mix,
+// horizontal-card-list, secondary-search) which have non-vertical parents.
+// Inserting sim into those parents puts it in the wrong column / layout.
+// Filter to main-column items only; fall back to unfiltered if filter empties.
+const SEARCH_SHELF_TAGS = new Set([
+  "YTD-SHELF-RENDERER",
+  "YTD-RADIO-RENDERER",
+  "YTD-REEL-SHELF-RENDERER",
+  "YTD-HORIZONTAL-CARD-LIST-RENDERER",
+  "YTD-SECONDARY-SEARCH-CONTAINER-RENDERER",
+  "YTD-HORIZONTAL-LIST-RENDERER",
+]);
+
+function isInSearchShelf(el) {
+  let cur = el.parentElement;
+  while (cur && cur !== document.body) {
+    if (SEARCH_SHELF_TAGS.has(cur.tagName)) return true;
+    cur = cur.parentElement;
+  }
+  return false;
+}
+
+function findSearchVideos() {
+  const all = Array.from(
+    document.querySelectorAll(`ytd-video-renderer:not([${SIM_ATTR}])`)
+  );
+  if (all.length === 0) return null;
+  const mainCol = all.filter((el) => !isInSearchShelf(el));
+  const items = mainCol.length > 0 ? mainCol : all;
+  return { itemTag: "ytd-video-renderer", items };
+}
+
 function findItemsInScope(scope, itemTag) {
   const items = Array.from(
     scope.querySelectorAll(`${itemTag}:not([${SIM_ATTR}])`)
@@ -121,7 +153,7 @@ function findContainerAndTemplate() {
     return t;
   }
   if (path === "/results") {
-    const t = findByAncestorItem("ytd-video-renderer");
+    const t = findSearchVideos();
     if (t) t.page = "search";
     return t;
   }
@@ -207,10 +239,10 @@ function computeInsertIndex(items, page, x, y, ts) {
     }
     if (cols < 1) cols = 1;
     const idx = center + y * cols + x;
-    return Math.max(0, Math.min(idx, len));
+    return Math.max(0, Math.min(idx, len - 1));
   }
   const idx = center + y;
-  return Math.max(0, Math.min(idx, len));
+  return Math.max(0, Math.min(idx, len - 1));
 }
 
 function neutralizeLinks(node) {

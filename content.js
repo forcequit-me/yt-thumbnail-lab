@@ -175,10 +175,9 @@ function getViewportCenterIndex(items) {
   return closestIdx;
 }
 
-// Compute insertion index: stable base anchor + position offset.
-// Base re-derives only on: first inject, route change (forceRecenter), or
-// explicit center press (x=0,y=0). Arrow ± clicks keep base stable so each
-// press shifts idx by exactly the y delta — predictable across scroll.
+// Compute insertion index: viewport-center anchor + position offset.
+// Route change (forceRecenter) snaps to top-of-list. Any other position change
+// re-derives base from current viewport center so sim tracks where user looks.
 // Home is a CSS grid (multiple cols) — derive cols from bounding rect tops.
 // Search/watch are linear lists; x is ignored.
 function computeInsertIndex(items, page, x, y, ts) {
@@ -186,13 +185,12 @@ function computeInsertIndex(items, page, x, y, ts) {
   if (len === 0) return 0;
 
   const currentPos = `${x},${y},${ts || 0}`;
-  const isExplicitCenter = x === 0 && y === 0;
   const positionChanged = currentPos !== lastPos[page];
 
   if (forceRecenter[page]) {
     baseIndexMap[page] = Math.min(2, len - 1);
     forceRecenter[page] = false;
-  } else if (baseIndexMap[page] === -1 || (isExplicitCenter && positionChanged)) {
+  } else if (baseIndexMap[page] === -1 || positionChanged) {
     baseIndexMap[page] = getViewportCenterIndex(items);
   }
   lastPos[page] = currentPos;

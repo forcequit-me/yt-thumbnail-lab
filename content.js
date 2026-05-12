@@ -83,37 +83,27 @@ function findByAncestorItem(itemTag) {
   return { itemTag, items };
 }
 
-// Search results may render ytd-video-renderer inside shelves (radio, mix,
-// horizontal-card-list, secondary-search) which have non-vertical parents.
-// Inserting sim into those parents puts it in the wrong column / layout.
-const SEARCH_SHELF_TAGS = new Set([
-  "YTD-SHELF-RENDERER",
-  "YTD-RADIO-RENDERER",
-  "YTD-REEL-SHELF-RENDERER",
-  "YTD-HORIZONTAL-CARD-LIST-RENDERER",
-  "YTD-SECONDARY-SEARCH-CONTAINER-RENDERER",
-  "YTD-HORIZONTAL-LIST-RENDERER",
-]);
-
-function isInSearchShelf(el) {
-  let cur = el.parentElement;
-  while (cur && cur !== document.body) {
-    if (SEARCH_SHELF_TAGS.has(cur.tagName)) return true;
-    cur = cur.parentElement;
-  }
-  return false;
-}
-
-// Strict main-column filter — if filter empties, return null so caller retries
-// once real results arrive instead of misplacing sim into a shelf.
 function findSearchVideos() {
-  const all = Array.from(
-    document.querySelectorAll(`ytd-video-renderer:not([${SIM_ATTR}])`)
+  const sections = document.querySelectorAll(
+    "ytd-item-section-renderer[page-subtype='search'] > #contents"
   );
-  if (all.length === 0) return null;
-  const mainCol = all.filter((el) => !isInSearchShelf(el));
-  if (mainCol.length === 0) return null;
-  return { itemTag: "ytd-video-renderer", items: mainCol };
+  for (const container of sections) {
+    const items = Array.from(container.children).filter(
+      (c) => c.tagName === "YTD-VIDEO-RENDERER" && !c.hasAttribute(SIM_ATTR)
+    );
+    if (items.length > 0) return { itemTag: "ytd-video-renderer", items };
+  }
+  const first = document.querySelector(
+    `ytd-video-renderer:not([${SIM_ATTR}])`
+  );
+  if (!first) return null;
+  const parent = first.parentElement;
+  if (!parent) return null;
+  const items = Array.from(parent.children).filter(
+    (c) => c.tagName === "YTD-VIDEO-RENDERER" && !c.hasAttribute(SIM_ATTR)
+  );
+  if (items.length === 0) return null;
+  return { itemTag: "ytd-video-renderer", items };
 }
 
 function findHomeItems() {
@@ -124,6 +114,40 @@ function findHomeItems() {
   const noShorts = all.filter((el) => !hasShortsSignal(el));
   if (noShorts.length === 0) return null;
   return { itemTag: "ytd-rich-item-renderer", items: noShorts };
+}
+
+function isAd(el) {
+  if (!el) return false;
+  return !!(
+    el.querySelector("ytd-ad-slot-renderer, ytd-promoted-video-renderer, ytd-action-companion-ad-renderer, [is-ad], ad-slot-renderer") ||
+    el.hasAttribute("is-ad") ||
+    el.querySelector("[aria-label='Sponsored']")
+  );
+}
+
+function hasCardTitle(el) {
+  if (!el) return false;
+  const titleEl = el.querySelector(".ytLockupMetadataViewModelTitle, a#video-title, h3 a");
+  const titleText = (titleEl || el).textContent || "";
+  return titleText.trim().length >= 2;
+}
+
+// Shared anchor-position filter. injectOnce and handleNudge MUST use the same
+// list, else handleNudge sets a pinnedAnchor id that injectOnce can't find →
+// inject falls back to viewport center → sim looks "locked".
+// Looser than template-eligibility (no thumbnail-ready gate) so positions
+// stay stable while images lazy-load.
+function getAnchorablePositionItems(target) {
+  return target.items.filter((el) => {
+    if (isAd(el)) return false;
+    if (!hasCardTitle(el)) return false;
+    if (target.page === "search") {
+      if (hasShortsSignal(el)) return false;
+      return true;
+    }
+    if (target.page === "home" && hasShortsSignal(el)) return false;
+    return true;
+  });
 }
 
 // Stable identifier for a video card. Survives DOM re-renders that replace
@@ -214,11 +238,27 @@ function findContainerAndTemplate() {
 // stable identifier (href + title), not DOM pointer. Pointers break when
 // YouTube re-renders; cardId() survives because we re-find the card each time.
 // Mode:
-//   "top"      — snap to top of list (first inject after load / route change)
-//   "viewport" — snap to viewport center (recover after off-screen drift)
+//   "top"      — snap to top index for that page (idx 0 on search since
+//                main results section can start far below the header; idx 2
+//                on home/watch where lists are dense and idx 2 is "near top")
+//   "viewport" — snap to viewport center
 //   "el"       — use pinnedAnchor[page] string ID
+function topIndexFor(page) {
+  // search: idx 0 — first section can have only 1 video before a shelf
+  //         interrupts. idx 1 would push sim past that into the next section,
+  //         which is visually past the shelf gap.
+  // home/watch: 3rd slot, what users said felt right on those pages.
+  return page === "search" ? 0 : 2;
+}
+function defaultModeFor() {
+  return "top";
+}
 let pinnedAnchor = { home: null, search: null, watch: null };
-let pinnedAnchorMode = { home: "top", search: "top", watch: "top" };
+let pinnedAnchorMode = {
+  home: defaultModeFor(),
+  search: defaultModeFor(),
+  watch: defaultModeFor(),
+};
 
 function getViewportCenterIndex(items) {
   const vCenter = window.innerHeight / 2;
@@ -241,7 +281,7 @@ function resolveAnchorIndex(items, page) {
   const len = items.length;
   if (len === 0) return 0;
   const mode = pinnedAnchorMode[page];
-  if (mode === "top") return Math.min(2, len - 1);
+  if (mode === "top") return Math.min(topIndexFor(page), len - 1);
   if (mode === "el") {
     const id = pinnedAnchor[page];
     if (id) {
@@ -1197,32 +1237,15 @@ function injectOnce() {
     return false; // signal failure so caller can retry
   }
 
-  // Skip ad elements when picking a template
-  const isAd = (el) => {
-    if (!el) return false;
-    return (
-      el.querySelector("ytd-ad-slot-renderer, ytd-promoted-video-renderer, ytd-action-companion-ad-renderer, [is-ad], ad-slot-renderer") ||
-      el.hasAttribute("is-ad") ||
-      el.querySelector("[aria-label*='Sponsored'], [aria-label*='Ad']")
-    );
+  const isTemplateSource = (el) => {
+    if (isAd(el)) return false;
+    if (!hasCardTitle(el)) return false;
+    if (!findReadyThumbnailImage(el)) return false;
+    return isStandardSearchVideo(el);
   };
 
-  // A populated card has a real title + thumbnail. Empty placeholders (data
-  // still loading) produce a sim card with green outline and no content.
-  const hasCardContent = (el) => {
-    if (!el) return false;
-    const titleText = (
-      el.querySelector(".ytLockupMetadataViewModelTitle, a#video-title, h3 a") || el
-    ).textContent || "";
-    if (titleText.trim().length < 2) return false;
-    return !!findReadyThumbnailImage(el);
-  };
-  const isShortsOnSearch = (el) => target.page === "search" && hasShortsSignal(el);
-  const isPositionAnchor = (el) => hasCardContent(el) && !isShortsOnSearch(el);
-  const isTemplateSource = (el) => hasCardContent(el) && isStandardSearchVideo(el);
-
-  const positionItems = target.items.filter((item) => !isAd(item) && isPositionAnchor(item));
-  const readyItems = target.items.filter((item) => !isAd(item) && isTemplateSource(item));
+  const positionItems = getAnchorablePositionItems(target);
+  const readyItems = target.items.filter(isTemplateSource);
   const template = readyItems[0] || null;
   // If nothing populated yet, signal failure so the retry chain / poller
   // tries again once the lazy-loaded data arrives.
@@ -1371,7 +1394,7 @@ function onNavigate() {
     const page = getRoutePage();
     if (page) {
       pinnedAnchor[page] = null;
-      pinnedAnchorMode[page] = "top";
+      pinnedAnchorMode[page] = defaultModeFor();
     }
   }
   if (
@@ -1408,14 +1431,7 @@ function handleNudge(direction) {
   if (!page) return;
   const target = findContainerAndTemplate();
   if (!target) return;
-  const positionItems = target.items.filter((el) => {
-    const titleText = (
-      el.querySelector(".ytLockupMetadataViewModelTitle, a#video-title, h3 a") || el
-    ).textContent || "";
-    if (titleText.trim().length < 2) return false;
-    if ((page === "search" || page === "home") && hasShortsSignal(el)) return false;
-    return true;
-  });
+  const positionItems = getAnchorablePositionItems(target);
   const len = positionItems.length;
   if (len === 0) return;
 

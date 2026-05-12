@@ -88,8 +88,8 @@ function findSearchVideos() {
     "ytd-item-section-renderer[page-subtype='search'] > #contents"
   );
   for (const container of sections) {
-    const items = Array.from(container.children).filter(
-      (c) => c.tagName === "YTD-VIDEO-RENDERER" && !c.hasAttribute(SIM_ATTR)
+    const items = Array.from(
+      container.querySelectorAll(`ytd-video-renderer:not([${SIM_ATTR}])`)
     );
     if (items.length > 0) return { itemTag: "ytd-video-renderer", items };
   }
@@ -97,10 +97,11 @@ function findSearchVideos() {
     `ytd-video-renderer:not([${SIM_ATTR}])`
   );
   if (!first) return null;
-  const parent = first.parentElement;
-  if (!parent) return null;
-  const items = Array.from(parent.children).filter(
-    (c) => c.tagName === "YTD-VIDEO-RENDERER" && !c.hasAttribute(SIM_ATTR)
+  const section = first.closest("ytd-item-section-renderer");
+  const scope = section || first.parentElement;
+  if (!scope) return null;
+  const items = Array.from(
+    scope.querySelectorAll(`ytd-video-renderer:not([${SIM_ATTR}])`)
   );
   if (items.length === 0) return null;
   return { itemTag: "ytd-video-renderer", items };

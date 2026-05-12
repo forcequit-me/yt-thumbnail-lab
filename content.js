@@ -86,7 +86,6 @@ function findByAncestorItem(itemTag) {
 // Search results may render ytd-video-renderer inside shelves (radio, mix,
 // horizontal-card-list, secondary-search) which have non-vertical parents.
 // Inserting sim into those parents puts it in the wrong column / layout.
-// Filter to main-column items only; fall back to unfiltered if filter empties.
 const SEARCH_SHELF_TAGS = new Set([
   "YTD-SHELF-RENDERER",
   "YTD-RADIO-RENDERER",
@@ -105,14 +104,44 @@ function isInSearchShelf(el) {
   return false;
 }
 
+// Strict main-column filter — if filter empties, return null so caller retries
+// once real results arrive instead of misplacing sim into a shelf.
 function findSearchVideos() {
   const all = Array.from(
     document.querySelectorAll(`ytd-video-renderer:not([${SIM_ATTR}])`)
   );
   if (all.length === 0) return null;
   const mainCol = all.filter((el) => !isInSearchShelf(el));
-  const items = mainCol.length > 0 ? mainCol : all;
-  return { itemTag: "ytd-video-renderer", items };
+  if (mainCol.length === 0) return null;
+  return { itemTag: "ytd-video-renderer", items: mainCol };
+}
+
+function findHomeItems() {
+  const all = Array.from(
+    document.querySelectorAll(`ytd-rich-item-renderer:not([${SIM_ATTR}])`)
+  );
+  if (all.length === 0) return null;
+  const noShorts = all.filter((el) => !hasShortsSignal(el));
+  if (noShorts.length === 0) return null;
+  return { itemTag: "ytd-rich-item-renderer", items: noShorts };
+}
+
+// Stable identifier for a video card. Survives DOM re-renders that replace
+// the element instance — we re-find the card by what's inside it, not by
+// pointer. href is the strongest signal; title is a tiebreaker for cards
+// without /watch URLs (lockup view models, etc.).
+function cardId(el) {
+  if (!el) return null;
+  const link = el.querySelector(
+    "a[href*='/watch'], a[href*='/shorts/'], a.yt-lockup-view-model-wiz__content-image"
+  );
+  const href = link ? link.getAttribute("href") || "" : "";
+  const titleEl = el.querySelector(
+    ".ytLockupMetadataViewModelTitle, a#video-title, #video-title, h3 a"
+  );
+  const title = (titleEl && titleEl.textContent ? titleEl.textContent : "").trim().slice(0, 64);
+  if (!href && !title) return null;
+  return `${href}|${title}`;
 }
 
 function findItemsInScope(scope, itemTag) {
@@ -143,7 +172,7 @@ function findWatchSidebarScope() {
 function findContainerAndTemplate() {
   const path = location.pathname;
   if (path === "/" || path.startsWith("/feed")) {
-    const t = findByAncestorItem("ytd-rich-item-renderer");
+    const t = findHomeItems();
     if (t) t.page = "home";
     return t;
   }
@@ -181,13 +210,15 @@ function findContainerAndTemplate() {
   return null;
 }
 
-// Anchor-pinning model: track which real card sim should sit before.
-// pinnedAnchor[page] holds a DOM element reference. Mode says how to resolve:
-//   "top"      — snap to top of list (used after route change)
-//   "viewport" — snap to whatever card is closest to viewport center
-//   "el"       — use pinnedAnchor[page] (pinned card from last user action)
+// Anchor-pinning model: track which real card the sim should sit before by
+// stable identifier (href + title), not DOM pointer. Pointers break when
+// YouTube re-renders; cardId() survives because we re-find the card each time.
+// Mode:
+//   "top"      — snap to top of list (first inject after load / route change)
+//   "viewport" — snap to viewport center (recover after off-screen drift)
+//   "el"       — use pinnedAnchor[page] string ID
 let pinnedAnchor = { home: null, search: null, watch: null };
-let pinnedAnchorMode = { home: "viewport", search: "viewport", watch: "viewport" };
+let pinnedAnchorMode = { home: "top", search: "top", watch: "top" };
 
 function getViewportCenterIndex(items) {
   const vCenter = window.innerHeight / 2;
@@ -212,8 +243,11 @@ function resolveAnchorIndex(items, page) {
   const mode = pinnedAnchorMode[page];
   if (mode === "top") return Math.min(2, len - 1);
   if (mode === "el") {
-    const idx = items.indexOf(pinnedAnchor[page]);
-    if (idx >= 0) return idx;
+    const id = pinnedAnchor[page];
+    if (id) {
+      const idx = items.findIndex((el) => cardId(el) === id);
+      if (idx >= 0) return idx;
+    }
   }
   return getViewportCenterIndex(items);
 }
@@ -1199,7 +1233,7 @@ function injectOnce() {
   const clone = buildSimNode(sim, template);
   if (anchor) {
     anchor.parentNode.insertBefore(clone, anchor);
-    pinnedAnchor[target.page] = anchor;
+    pinnedAnchor[target.page] = cardId(anchor);
     pinnedAnchorMode[target.page] = "el";
   } else {
     return false;
@@ -1379,19 +1413,20 @@ function handleNudge(direction) {
       el.querySelector(".ytLockupMetadataViewModelTitle, a#video-title, h3 a") || el
     ).textContent || "";
     if (titleText.trim().length < 2) return false;
-    if (page === "search" && hasShortsSignal(el)) return false;
+    if ((page === "search" || page === "home") && hasShortsSignal(el)) return false;
     return true;
   });
   const len = positionItems.length;
   if (len === 0) return;
 
-  const pinnedEl = pinnedAnchor[page];
-  const pinnedRect = pinnedEl ? pinnedEl.getBoundingClientRect() : null;
-  const pinnedVisible = pinnedRect && pinnedRect.bottom > 0 && pinnedRect.top < window.innerHeight;
-  let curIdx;
-  if (pinnedAnchorMode[page] === "el" && pinnedVisible) {
-    curIdx = positionItems.indexOf(pinnedEl);
-    if (curIdx < 0) curIdx = getViewportCenterIndex(positionItems);
+  const pinnedId = pinnedAnchor[page];
+  let curIdx = pinnedId
+    ? positionItems.findIndex((el) => cardId(el) === pinnedId)
+    : -1;
+  if (curIdx >= 0) {
+    const r = positionItems[curIdx].getBoundingClientRect();
+    const visible = r.bottom > 0 && r.top < window.innerHeight;
+    if (!visible) curIdx = getViewportCenterIndex(positionItems);
   } else {
     curIdx = getViewportCenterIndex(positionItems);
   }
@@ -1401,7 +1436,7 @@ function handleNudge(direction) {
   else if (direction === "prev") newIdx = Math.max(curIdx - 1, 0);
   else newIdx = getViewportCenterIndex(positionItems);
 
-  pinnedAnchor[page] = positionItems[newIdx];
+  pinnedAnchor[page] = cardId(positionItems[newIdx]);
   pinnedAnchorMode[page] = "el";
   beginFreshInject();
 }

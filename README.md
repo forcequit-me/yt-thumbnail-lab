@@ -73,7 +73,7 @@ Open **Position** in the popup. Three buttons: **<**, **Recenter**, **>**.
 - **>** moves it to the next slot.
 - **Recenter** snaps the sim card to whichever video is closest to the middle of your screen right now.
 
-Position lives on the page itself, not in storage. Reloading the tab or switching to a new search resets the sim to the center of the new view. If the sim has scrolled out of sight, the next arrow click pulls it back to your view before stepping.
+Position lives on the page itself, not in storage. Reloading the tab or switching to a new search resets the sim to near the top of the results. If the sim has scrolled out of sight, the next arrow click pulls it back to your view before stepping.
 
 ### Templates (A/B testing)
 

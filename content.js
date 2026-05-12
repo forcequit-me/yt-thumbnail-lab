@@ -36,11 +36,6 @@ function getRoutePage() {
 
 let lastRouteKey = getRouteKey();
 
-function resetPositionCache() {
-  baseIndexMap = { home: -1, search: -1, watch: -1 };
-  lastPos = { home: "", search: "", watch: "" };
-}
-
 function nextGeneration() {
   navGeneration += 1;
 }
@@ -186,9 +181,13 @@ function findContainerAndTemplate() {
   return null;
 }
 
-let baseIndexMap = { home: -1, search: -1, watch: -1 };
-let lastPos = { home: "", search: "", watch: "" };
-let forceRecenter = { home: false, search: false, watch: false };
+// Anchor-pinning model: track which real card sim should sit before.
+// pinnedAnchor[page] holds a DOM element reference. Mode says how to resolve:
+//   "top"      — snap to top of list (used after route change)
+//   "viewport" — snap to whatever card is closest to viewport center
+//   "el"       — use pinnedAnchor[page] (pinned card from last user action)
+let pinnedAnchor = { home: null, search: null, watch: null };
+let pinnedAnchorMode = { home: "viewport", search: "viewport", watch: "viewport" };
 
 function getViewportCenterIndex(items) {
   const vCenter = window.innerHeight / 2;
@@ -207,42 +206,16 @@ function getViewportCenterIndex(items) {
   return closestIdx;
 }
 
-// Compute insertion index: viewport-center anchor + position offset.
-// Route change (forceRecenter) snaps to top-of-list. Any other position change
-// re-derives base from current viewport center so sim tracks where user looks.
-// Home is a CSS grid (multiple cols) — derive cols from bounding rect tops.
-// Search/watch are linear lists; x is ignored.
-function computeInsertIndex(items, page, x, y, ts) {
+function resolveAnchorIndex(items, page) {
   const len = items.length;
   if (len === 0) return 0;
-
-  const currentPos = `${x},${y},${ts || 0}`;
-  const positionChanged = currentPos !== lastPos[page];
-
-  if (forceRecenter[page]) {
-    baseIndexMap[page] = Math.min(2, len - 1);
-    forceRecenter[page] = false;
-  } else if (baseIndexMap[page] === -1 || positionChanged) {
-    baseIndexMap[page] = getViewportCenterIndex(items);
+  const mode = pinnedAnchorMode[page];
+  if (mode === "top") return Math.min(2, len - 1);
+  if (mode === "el") {
+    const idx = items.indexOf(pinnedAnchor[page]);
+    if (idx >= 0) return idx;
   }
-  lastPos[page] = currentPos;
-
-  const center = baseIndexMap[page];
-  
-  if (page === "home") {
-    const tops = items.map((el) => Math.round(el.getBoundingClientRect().top));
-    const firstTop = tops[0];
-    let cols = 0;
-    for (const t of tops) {
-      if (t === firstTop) cols++;
-      else break;
-    }
-    if (cols < 1) cols = 1;
-    const idx = center + y * cols + x;
-    return Math.max(0, Math.min(idx, len - 1));
-  }
-  const idx = center + y;
-  return Math.max(0, Math.min(idx, len - 1));
+  return getViewportCenterIndex(items);
 }
 
 function neutralizeLinks(node) {
@@ -1221,18 +1194,15 @@ function injectOnce() {
   // tries again once the lazy-loaded data arrives.
   if (!template) return false;
 
-  const posMap = sim.position || {};
-  const pos = posMap[target.page] || { x: 0, y: 0 };
-  const insertIdx = computeInsertIndex(positionItems, target.page, pos.x | 0, pos.y | 0, pos.ts || 0);
+  const insertIdx = resolveAnchorIndex(positionItems, target.page);
   const anchor = positionItems[insertIdx];
   const clone = buildSimNode(sim, template);
   if (anchor) {
     anchor.parentNode.insertBefore(clone, anchor);
+    pinnedAnchor[target.page] = anchor;
+    pinnedAnchorMode[target.page] = "el";
   } else {
-    const lastItem = positionItems[positionItems.length - 1];
-    if (lastItem && lastItem.parentNode) {
-      lastItem.parentNode.appendChild(clone);
-    }
+    return false;
   }
 
   applyAllSwaps(clone, sim);
@@ -1332,15 +1302,6 @@ function stopInjectPoller() {
   if (injectPoller) { clearInterval(injectPoller); injectPoller = null; }
 }
 
-function positionStateKey(sim) {
-  const pos = sim && sim.position ? sim.position : {};
-  return JSON.stringify({
-    home: pos.home || {},
-    search: pos.search || {},
-    watch: pos.watch || {},
-  });
-}
-
 function assetWasCleared(prevSim, nextSim) {
   if (!prevSim || !nextSim) return false;
   return (!!prevSim.thumbnail && !nextSim.thumbnail) || (!!prevSim.avatar && !nextSim.avatar);
@@ -1368,34 +1329,16 @@ function beginFreshInject() {
   startInjectPoller();
 }
 
-function resetStoredPositionForPage(page) {
-  if (!page || !currentState || !currentState.sim) return;
-  const ts = Date.now();
-  currentState = {
-    ...currentState,
-    sim: {
-      ...currentState.sim,
-      position: {
-        ...((currentState.sim && currentState.sim.position) || {}),
-        [page]: { x: 0, y: 0, ts },
-      },
-    },
-  };
-  chrome.runtime.sendMessage(
-    { type: "ytlab:resetPosition", page },
-    () => void chrome.runtime.lastError
-  );
-}
-
 function onNavigate() {
   const key = getRouteKey();
   const routeChanged = key !== lastRouteKey;
   if (key !== lastRouteKey) {
     lastRouteKey = key;
-    resetPositionCache();
     const page = getRoutePage();
-    if (page) forceRecenter[page] = true;
-    resetStoredPositionForPage(page);
+    if (page) {
+      pinnedAnchor[page] = null;
+      pinnedAnchorMode[page] = "top";
+    }
   }
   if (
     routeChanged ||
@@ -1420,10 +1363,46 @@ function applyAll(state) {
     return;
   }
 
-  const positionChanged = positionStateKey(previousState && previousState.sim) !== positionStateKey(nextState.sim);
-  const needsFreshTemplate = positionChanged || assetWasCleared(previousState && previousState.sim, nextState.sim);
+  const needsFreshTemplate = assetWasCleared(previousState && previousState.sim, nextState.sim);
 
   if (!needsFreshTemplate && patchExistingSim(nextState.sim)) return;
+  beginFreshInject();
+}
+
+function handleNudge(direction) {
+  const page = getRoutePage();
+  if (!page) return;
+  const target = findContainerAndTemplate();
+  if (!target) return;
+  const positionItems = target.items.filter((el) => {
+    const titleText = (
+      el.querySelector(".ytLockupMetadataViewModelTitle, a#video-title, h3 a") || el
+    ).textContent || "";
+    if (titleText.trim().length < 2) return false;
+    if (page === "search" && hasShortsSignal(el)) return false;
+    return true;
+  });
+  const len = positionItems.length;
+  if (len === 0) return;
+
+  const pinnedEl = pinnedAnchor[page];
+  const pinnedRect = pinnedEl ? pinnedEl.getBoundingClientRect() : null;
+  const pinnedVisible = pinnedRect && pinnedRect.bottom > 0 && pinnedRect.top < window.innerHeight;
+  let curIdx;
+  if (pinnedAnchorMode[page] === "el" && pinnedVisible) {
+    curIdx = positionItems.indexOf(pinnedEl);
+    if (curIdx < 0) curIdx = getViewportCenterIndex(positionItems);
+  } else {
+    curIdx = getViewportCenterIndex(positionItems);
+  }
+
+  let newIdx;
+  if (direction === "next") newIdx = Math.min(curIdx + 1, len - 1);
+  else if (direction === "prev") newIdx = Math.max(curIdx - 1, 0);
+  else newIdx = getViewportCenterIndex(positionItems);
+
+  pinnedAnchor[page] = positionItems[newIdx];
+  pinnedAnchorMode[page] = "el";
   beginFreshInject();
 }
 
@@ -1442,6 +1421,10 @@ function fetchState(retries = 5) {
 fetchState();
 
 chrome.runtime.onMessage.addListener((msg) => {
+  if (msg && msg.type === "ytlab:nudge" && msg.direction) {
+    handleNudge(msg.direction);
+    return;
+  }
   if (msg && msg.type === "ytlab:setState" && msg.state) {
     hasFetchedState = true;
     applyAll(msg.state);

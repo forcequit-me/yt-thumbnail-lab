@@ -16,7 +16,7 @@ Three uses:
 
 - **Thumbnail simulator.** Upload your thumbnail and avatar, fill in title, channel, view count, duration, and description. A fake video card appears in the home feed, search results, and watch-page sidebar, side by side with live cards. Shortcut: `Alt+Shift+S`. Right-click any YouTube page for the toggle.
 - **Custom highlight color.** Pick the outline color around your sim card.
-- **Reposition the sim card.** A prev / Recenter / next bar shifts the card between slots on home, search, and watch in one click. Limits clamp at ±5 from center.
+- **Reposition the sim card.** A prev / Recenter / next bar shifts the card between adjacent video slots on home, search, and watch.
 - **Templates for A/B testing.** Save named configurations (thumbnail, title, all the fields), swap between them, delete with confirmation.
 - **Quick-slot default.** Save your usual setup and reload it with one click.
 - **B&W mode.** Grayscales every thumbnail on YouTube. Shortcut: `Alt+Shift+B`. Right-click toggle as well. Off by default.
@@ -69,17 +69,17 @@ Clicking the sim card does nothing. It's a preview, not a real video. The toolba
 
 Open **Position** in the popup. Three buttons: **<**, **Recenter**, **>**.
 
-- **<** moves the sim card one slot earlier on every page at once. On home that's one column left; on search and watch (vertical lists) it's one slot up.
-- **>** moves it one slot later. Right on home, down on search and watch.
-- **Recenter** puts every page back to the middle slot.
+- **<** moves the sim card to the previous video slot on the page you're currently viewing.
+- **>** moves it to the next slot.
+- **Recenter** snaps the sim card to whichever video is closest to the middle of your screen right now.
 
-One bar drives all three pages. The card stops at ±5 slots from center.
+Position lives on the page itself, not in storage. Reloading the tab or switching to a new search resets the sim to the center of the new view. If the sim has scrolled out of sight, the next arrow click pulls it back to your view before stepping.
 
 ### Templates (A/B testing)
 
 Open **Templates** in the popup to save named configurations:
 
-- Type a name and click **Save** to store the current card content (thumbnail, avatar, title, channel, duration, views/age, description), the highlight on/off toggle, and the position offsets.
+- Type a name and click **Save** to store the current card content (thumbnail, avatar, title, channel, duration, views/age, description) and the highlight on/off toggle.
 - Pick a name from the dropdown and click **Load** to swap to it.
 - **Delete** removes the selected template. Confirmation required.
 - Saving over an existing name asks for confirmation first.
@@ -90,8 +90,8 @@ Templates do not carry the highlight color. It's a global preference (see below)
 
 At the bottom of the simulator panel:
 
-- **Save default.** Stores card content only (thumbnail, avatar, title, channel, duration, views/age, description). Excludes position, highlight toggle, and highlight color, so loading the default leaves your layout and color choices alone.
-- **Reset.** Restores those content fields. Position offsets and highlight color stay put. Use it when starting a new template variant from scratch.
+- **Save default.** Stores card content only (thumbnail, avatar, title, channel, duration, views/age, description). Excludes the highlight toggle and highlight color, so loading the default leaves your color choices alone.
+- **Reset.** Restores those content fields. Highlight color stays put. Use it when starting a new template variant from scratch.
 
 If you haven't saved a default, **Reset** does nothing.
 

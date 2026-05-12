@@ -1,9 +1,3 @@
-const DEFAULT_POSITION = {
-  home:   { x: 0, y: 0 },
-  search: { x: 0, y: 0 },
-  watch:  { x: 0, y: 0 },
-};
-
 const DEFAULT_SIM = {
   enabled: false,
   thumbnail: "",
@@ -15,7 +9,6 @@ const DEFAULT_SIM = {
   duration: "10:24",
   highlight: true,
   highlightColor: "#00ff88",
-  position: DEFAULT_POSITION,
 };
 
 const DEFAULT_STATE = {
@@ -83,16 +76,8 @@ async function broadcastSimPatch(sim) {
 
 function mergeSim(stored) {
   const s = stored || {};
-  const pos = s.position || {};
-  return {
-    ...DEFAULT_SIM,
-    ...s,
-    position: {
-      home:   { ...DEFAULT_POSITION.home,   ...(pos.home   || {}) },
-      search: { ...DEFAULT_POSITION.search, ...(pos.search || {}) },
-      watch:  { ...DEFAULT_POSITION.watch,  ...(pos.watch  || {}) },
-    },
-  };
+  const { position: _drop, ...rest } = s;
+  return { ...DEFAULT_SIM, ...rest };
 }
 
 function mergeSettings(stored) {
@@ -133,19 +118,19 @@ async function setSim(sim) {
   else await broadcastSimPatch(sim);
 }
 
-async function resetPosition(page) {
-  if (!Object.prototype.hasOwnProperty.call(DEFAULT_POSITION, page)) return;
-  const current = await getState();
-  const merged = mergeSim({
-    ...current.sim,
-    position: {
-      ...current.sim.position,
-      [page]: { ...DEFAULT_POSITION[page], ts: Date.now() },
-    },
+async function nudgePosition(direction) {
+  if (!direction) return;
+  const tabs = await chrome.tabs.query({
+    active: true,
+    lastFocusedWindow: true,
+    url: "*://*.youtube.com/*",
   });
-  await chrome.storage.local.set({ sim: merged });
-  const state = await getState();
-  await broadcastState(state);
+  for (const tab of tabs) {
+    if (tab.id == null) continue;
+    chrome.tabs
+      .sendMessage(tab.id, { type: "ytlab:nudge", direction })
+      .catch(() => {});
+  }
 }
 
 async function setStartupReset(which, value) {
@@ -159,9 +144,9 @@ async function setStartupReset(which, value) {
 // Fields stored in Save default — card content only. Excludes: enabled,
 // position (per-test layout), highlight bool, highlightColor (global pref).
 const DEFAULT_FIELDS = ["thumbnail", "avatar", "title", "channel", "meta", "description", "duration"];
-// Fields stored in templates — content + highlight on/off + position.
+// Fields stored in templates — content + highlight on/off.
 // Excludes: enabled, highlightColor (global pref auto-saved on color change).
-const TEMPLATE_FIELDS = [...DEFAULT_FIELDS, "highlight", "position"];
+const TEMPLATE_FIELDS = [...DEFAULT_FIELDS, "highlight"];
 
 function pickFields(sim, fields) {
   const out = {};
@@ -299,8 +284,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     setSim(msg.sim || {}).then(async () => sendResponse(await getState()));
     return true;
   }
-  if (msg.type === "ytlab:resetPosition") {
-    resetPosition(msg.page).then(async () => sendResponse(await getState()));
+  if (msg.type === "ytlab:nudgePosition") {
+    nudgePosition(msg.direction).then(() => sendResponse({ ok: true }));
     return true;
   }
   if (msg.type === "ytlab:setStartupReset") {

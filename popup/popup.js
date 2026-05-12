@@ -51,11 +51,6 @@ const tplSave = document.getElementById("tpl-save");
 let thumbnailDataUrl = "";
 let avatarDataUrl = "";
 let loading = true;
-let position = {
-  home:   { x: 0, y: 0 },
-  search: { x: 0, y: 0 },
-  watch:  { x: 0, y: 0 },
-};
 
 const MAX_BYTES = 100 * 1024 * 1024;
 
@@ -85,12 +80,6 @@ function render(state) {
   highlightActive = sim.highlight !== false;
   simHighlightBtn.checked = highlightActive;
   simHighlightColor.value = sim.highlightColor || "#00ff88";
-
-  position = {
-    home:   { ...(sim.position?.home   || { x: 0, y: 0 }) },
-    search: { ...(sim.position?.search || { x: 0, y: 0 }) },
-    watch:  { ...(sim.position?.watch  || { x: 0, y: 0 }) },
-  };
 
   if (sim.thumbnail) {
     thumbnailDataUrl = sim.thumbnail;
@@ -122,7 +111,6 @@ function getSimObject({ includeAssets = true } = {}) {
     enabled: btn.classList.contains("on"),
     highlight: highlightActive,
     highlightColor: simHighlightColor.value || "#00ff88",
-    position,
   };
   if (includeAssets) {
     sim.thumbnail = thumbnailDataUrl;
@@ -336,28 +324,11 @@ simResetDefault.addEventListener("click", () => {
 });
 
 /* ── Position arrows ── */
-const POS_LIMIT = 5;
 posBtns.forEach((b) => {
   b.addEventListener("click", () => {
     const dir = b.getAttribute("data-dir");
-    if (dir === "prev") {
-      position.home.x = Math.max(-POS_LIMIT, position.home.x - 1);
-      position.search.y = Math.max(-POS_LIMIT, position.search.y - 1);
-      position.watch.y = Math.max(-POS_LIMIT, position.watch.y - 1);
-    } else if (dir === "next") {
-      position.home.x = Math.min(POS_LIMIT, position.home.x + 1);
-      position.search.y = Math.min(POS_LIMIT, position.search.y + 1);
-      position.watch.y = Math.min(POS_LIMIT, position.watch.y + 1);
-    } else if (dir === "center") {
-      position.home.x = 0; position.home.y = 0;
-      position.search.x = 0; position.search.y = 0;
-      position.watch.x = 0; position.watch.y = 0;
-    }
-    const ts = Date.now();
-    position.home.ts = ts;
-    position.search.ts = ts;
-    position.watch.ts = ts;
-    autoSave();
+    if (!dir) return;
+    chrome.runtime.sendMessage({ type: "ytlab:nudgePosition", direction: dir });
   });
 });
 
